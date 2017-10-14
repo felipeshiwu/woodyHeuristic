@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
   m.nlinhas = atoi(argv[1]);
   m.ncolunas = atoi(argv[2]);
   m.ncores = atoi(argv[3]);
-
+  //eeste
   if(argc == 5)
     semente = atoi(argv[4]);
   else
