@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 typedef struct {
@@ -110,33 +111,39 @@ void pinta_mapa(mapa *m, int cor) {
   pinta(m, 0, 0, m->mapa[0][0], cor);
 }
 
-void getFronteira(fronteira *f, mapa *m, int linha, int coluna, int cor) {
-  if (cor == m[0][0]) {
-    if (coluna != 0)
-      getFronteira(f, m, linha, coluna - 1, m->mapa[linha][coluna-1]);
-    if (coluna < m->ncolunas - 1)
-      getFronteira(f, m, linha, coluna + 1, m->mapa[linha][coluna+1]);
-    if (linha != 0)
-      getFronteira(f, m, linha - 1, coluna, m->mapa[linha-1][coluna]);
-    if (linha < m->nlinhas - 1)
-      getFronteira(f, m, linha + 1, coluna, m->mapa[linha+1][coluna]);
+void getFronteira(fronteira *f, mapa *m, int linha, int coluna, int cor, int **mapaAux) {
+  printf("linha: %d, coluna: %d, cor: %d, m->mapa[0][0]: %d\n", linha, coluna, cor, m->mapa[0][0]);
+  if (cor == m->mapa[0][0]) {
+    mapaAux[linha][coluna] = -1;
+    if (coluna != 0 && mapaAux[linha][coluna-1] != -1)
+      getFronteira(f, m, linha, coluna - 1, m->mapa[linha][coluna-1], mapaAux);
+    if (coluna < m->ncolunas - 1 && mapaAux[linha][coluna+1] != -1)
+      getFronteira(f, m, linha, coluna + 1, m->mapa[linha][coluna+1], mapaAux);
+    if (linha != 0 && mapaAux[linha-1][coluna] != -1)
+      getFronteira(f, m, linha - 1, coluna, m->mapa[linha-1][coluna], mapaAux);
+    if (linha < m->nlinhas - 1 && mapaAux[linha+1][coluna] != -1)
+      getFronteira(f, m, linha + 1, coluna, m->mapa[linha+1][coluna], mapaAux);
   }
   else {
+    printf("entrou no else\n");
     //Repeticao de elementos na fronteira - otimizar
     int jaExiste = 0;
     for (int i = 0; i < f->tamanho; i++) {
-      if (f->elementos[i]->linha == linha && f->elementos[i]->coluna == coluna) {
+      if (f->elementos[i].linha == linha && f->elementos[i].coluna == coluna) {
         jaExiste = 1;
         break;
       }
     }
     if (!jaExiste) {
-      posicao *elemento = (posicao*) malloc(sizeof(posicao*));
-      elemento->linha = linha;
-      elemento->coluna = coluna;
-      elemento->cor = cor;
+      printf("entrou no if\n");
+      posicao elemento;
+      elemento.linha = linha;
+      elemento.coluna = coluna;
+      elemento.cor = cor;
       f->elementos[f->tamanho] = elemento;
       f->tamanho++; 
+      printf("inseriu cor: %d\n", elemento.cor);
+      printf("tamanho fronteira: %d\n", f->tamanho);
     }
   }
 }
@@ -163,10 +170,16 @@ int main(int argc, char **argv) {
   mostra_mapa_cor(&m); 
 
   //=====================================================================================================//
-  fronteira *f;
+  fronteira *f = malloc(sizeof(fronteira));
   f->tamanho = 0;
-  f->elementos = (*posicao) malloc(m.nlinhas * m.ncolunas * (sizeof(*posicao)));
-  getFronteira(f, &m, 0, 0, m.mapa[0][0]);
+  f->elementos = malloc(m.nlinhas * m.ncolunas * (sizeof(posicao)));
+
+  int **mapaAux = (int**) malloc(m.nlinhas * sizeof(int*));
+  for(int i = 0; i < m.nlinhas; i++) 
+    mapaAux[i] = (int*) malloc(m.ncolunas * sizeof(int));
+  
+  getFronteira(f, &m, 0, 0, m.mapa[0][0], mapaAux);
+
   scanf("%d", &cor);
   while(cor > 0 && cor <= m.ncores) {
     pinta_mapa(&m, cor);
