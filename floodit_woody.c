@@ -149,7 +149,7 @@ void getFronteira(fronteira *f, mapa *m, int linha, int coluna, int cor, int **m
 
 caminho *criaCaminho(int *passos, int quantidadePassos) {
     caminho *new_caminho;
-    new_caminho = malloc(sizeof(new_caminho));
+    new_caminho = malloc(sizeof(caminho));
     new_caminho->passos = passos;
     new_caminho->quantidadePassos = quantidadePassos;
     new_caminho->filho = NULL;
