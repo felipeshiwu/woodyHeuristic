@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#define MAXV 16
+#define MAXV 100
 
 //---------------------------------- MAPA -------------------------------------------//
 typedef struct {
@@ -183,7 +183,6 @@ caminho *adicionaFilho(caminho *c, int *passos, int quantidadePassos) {
 
 int getDistanciaBordaCimaDireita(mapa *m) {
     fronteira *f = malloc(sizeof(fronteira));
-    printf("testando\n");
     f->tamanho = 0;
     f->elementos = malloc(m->nlinhas * m->ncolunas * (sizeof(posicao)));
 
@@ -298,17 +297,10 @@ int main(int argc, char **argv) {
     // Se G[i][j] > 0, então há aresta que liga 'i' a 'j' com custo G[i][j].
     int matriz[MAXV][MAXV];
     criaMatrizAdjacencia(&m, matriz);
-    printf("criou\n");
-    for (int i = 0; i < MAXV; i++) {
-        for (int j = 0; j < MAXV; j++) {
-            printf("%d ", matriz[i][j]);
-        }
-        printf("\n");
-    }
     int V; // quantidade de vértices no grafo G
     // Armazena a distância mínima partindo de um vértice 'Vi' até todos os outros vértices
     // dis[i] representa a menor distância de 'Vi' a 'i'.
-    int dis[f->tamanho];
+    int dis[MAXV];
     char vis[MAXV];
     memset (vis, 0, sizeof (vis));
     memset (dis, 0x7f, sizeof (dis));
@@ -318,17 +310,20 @@ int main(int argc, char **argv) {
     
     
     int t, i;
-    for (t = 0; t < f->tamanho; t++)
+    for (t = 0; t < MAXV; t++)
     {
         int v = -1;
-        for (i = 0; i < f->tamanho; i++)
+        for (i = 0; i < MAXV; i++)
             if (!vis[i] && (v < 0 || dis[i] < dis[v]))
                 v = i;
         vis[v] = 1;
-        for (i = 0; i < f->tamanho; i++)
+        for (i = 0; i < MAXV; i++)
             if (matriz[v][i] >= 0 && dis[i] > dis[v] + matriz[v][i])
             dis[i] = dis[v] + matriz[v][i];
     }
+
+    for (int i = 0; i < MAXV; i++)
+        printf("%d ", dis[i]);
 
 
 
