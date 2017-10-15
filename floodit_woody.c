@@ -3,7 +3,8 @@
 #include <string.h>
 #include <time.h>
 
-#define MAXV 100
+#define MAXSIZE 10000
+int matriz[MAXSIZE][MAXSIZE];
 
 //---------------------------------- MAPA -------------------------------------------//
 typedef struct {
@@ -212,9 +213,9 @@ int getDistanciaBordaBaixoDireita() {
 
 }
 
-void criaMatrizAdjacencia(mapa *m, int matriz[MAXV][MAXV]) {
-    for (int i = 0; i < MAXV; i++)
-        for (int j = 0; j < MAXV; j++) {
+void criaMatrizAdjacencia(mapa *m, int countPosicoes, int matriz[countPosicoes][countPosicoes]) {
+    for (int i = 0; i < countPosicoes; i++)
+        for (int j = 0; j < countPosicoes; j++) {
             if (i == j)
                 matriz[i][j] = 0;
             else
@@ -250,10 +251,32 @@ void criaMatrizAdjacencia(mapa *m, int matriz[MAXV][MAXV]) {
     }
 }
 
+int dijkstra(int countPosicoes, int matriz[countPosicoes][countPosicoes], int borda) {
+    int dis[countPosicoes];
+    char vis[countPosicoes];
+    memset (vis, 0, sizeof (vis));
+    memset (dis, 0x7f, sizeof (dis));
+    dis[borda] = 0;
+    int t, i;
+    for (t = 0; t < countPosicoes; t++)
+    {
+        int v = -1;
+        for (i = 0; i < countPosicoes; i++)
+            if (!vis[i] && (v < 0 || dis[i] < dis[v]))
+                v = i;
+        vis[v] = 1;
+        for (i = 0; i < countPosicoes; i++)
+            if (matriz[v][i] >= 0 && dis[i] > dis[v] + matriz[v][i])
+            dis[i] = dis[v] + matriz[v][i];
+    }
+    return dis[0];
+}
+
 int main(int argc, char **argv) {
     int cor;
     mapa m;
     int semente;
+    int countPosicoes;
 
     if(argc < 4 || argc > 5) {
         printf("uso: %s <numero_de_linhas> <numero_de_colunas> <numero_de_cores> [<semente_aleatoria>]\n", argv[0]);
@@ -263,6 +286,8 @@ int main(int argc, char **argv) {
     m.nlinhas = atoi(argv[1]);
     m.ncolunas = atoi(argv[2]);
     m.ncores = atoi(argv[3]);
+
+    countPosicoes = m.nlinhas * m.ncolunas;
 
     if(argc == 5)
         semente = atoi(argv[4]);
@@ -283,67 +308,26 @@ int main(int argc, char **argv) {
     //printf("distancia: %d\n", distancia);
     
     //===========================================================================
-    fronteira *f = malloc(sizeof(fronteira));
-    f->tamanho = 0;
-    f->elementos = malloc(m.nlinhas * m.ncolunas * (sizeof(posicao)));
+    // fronteira *f = malloc(sizeof(fronteira));
+    // f->tamanho = 0;
+    // f->elementos = malloc(m.nlinhas * m.ncolunas * (sizeof(posicao)));
     
-    int **mapaAux = (int**) malloc(m.nlinhas * sizeof(int*));
-    for(int i = 0; i < m.nlinhas; i++) 
-    mapaAux[i] = (int*) malloc(m.ncolunas * sizeof(int));
+    // int **mapaAux = (int**) malloc(m.nlinhas * sizeof(int*));
+    // for(int i = 0; i < m.nlinhas; i++) 
+    // mapaAux[i] = (int*) malloc(m.ncolunas * sizeof(int));
     
-    getFronteira(f, &m, 0, 0, m.mapa[0][0], mapaAux);
+    // getFronteira(f, &m, 0, 0, m.mapa[0][0], mapaAux);
 
     // Matriz de adjacências
     // Se G[i][j] > 0, então há aresta que liga 'i' a 'j' com custo G[i][j].
-    int matriz[MAXV][MAXV];
-    criaMatrizAdjacencia(&m, matriz);
-    int V; // quantidade de vértices no grafo G
-    // Armazena a distância mínima partindo de um vértice 'Vi' até todos os outros vértices
-    // dis[i] representa a menor distância de 'Vi' a 'i'.
-    int dis[MAXV];
-    char vis[MAXV];
-    memset (vis, 0, sizeof (vis));
-    memset (dis, 0x7f, sizeof (dis));
-    dis[9] = 0;
-    
-    
-    
-    
-    int t, i;
-    for (t = 0; t < MAXV; t++)
-    {
-        int v = -1;
-        for (i = 0; i < MAXV; i++)
-            if (!vis[i] && (v < 0 || dis[i] < dis[v]))
-                v = i;
-        vis[v] = 1;
-        for (i = 0; i < MAXV; i++)
-            if (matriz[v][i] >= 0 && dis[i] > dis[v] + matriz[v][i])
-            dis[i] = dis[v] + matriz[v][i];
-    }
-
-    for (int i = 0; i < MAXV; i++)
-        printf("%d ", dis[i]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    //===========================================================================
+    //int matriz[countPosicoes][countPosicoes];
+    criaMatrizAdjacencia(&m, countPosicoes, matriz);
+    int distanciaBordaCimaDireita = dijkstra(countPosicoes, matriz, m.ncolunas-1);
+    int distanciaBordaBaixoDireita = dijkstra(countPosicoes, matriz, countPosicoes-1);
+    int distanciaBordaBaixoEsquerda = dijkstra(countPosicoes, matriz, countPosicoes-m.ncolunas);
+    // printf("Distancia cima direita: %d\n", distanciaBordaCimaDireita);
+    // printf("Distancia baixo direita: %d\n", distanciaBordaBaixoDireita);
+    // printf("Distancia baixo esquerda: %d\n", distanciaBordaBaixoEsquerda);
     
 
     scanf("%d", &cor);
