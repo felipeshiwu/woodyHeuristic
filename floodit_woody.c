@@ -1,10 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include <time.h>
 
 #define MAXSIZE 10000
 int matriz[MAXSIZE][MAXSIZE];
+int menorCusto = 0x7f;
 
 //---------------------------------- MAPA -------------------------------------------//
 typedef struct {
@@ -27,17 +29,22 @@ typedef struct {
 } fronteira;
 
 //---------------------- ARVORE DE CAMINHOS POSSIVEIS -------------------------------//
+typedef struct caminho caminho;
+
 struct caminho {
     int *passos;
     int quantidadePassos;
-    struct caminho *filho;
-    struct caminho *proximoIrmao;
+    int quantidadeFilhos;
+    int menorDistanciaBorda;
+    caminho *filho[3];
 };
 
-typedef struct caminho caminho;
 
 //------------------------------ GRAFO ----------------------------------------------//
-
+typedef struct {
+    int distancia;
+    int *caminhos;
+} menorCaminho;
 
 
 void gera_mapa(mapa *m, int semente) {
@@ -157,60 +164,17 @@ void getFronteira(fronteira *f, mapa *m, int linha, int coluna, int cor, int **m
     }
 }
 
-caminho *criaCaminho(int *passos, int quantidadePassos) {
+caminho *criaCaminho(int *passos, int quantidadePassos, int menorDistanciaBorda) {
     caminho *new_caminho;
     new_caminho = malloc(sizeof(caminho));
     new_caminho->passos = passos;
     new_caminho->quantidadePassos = quantidadePassos;
-    new_caminho->filho = NULL;
-    new_caminho->proximoIrmao = NULL;
+    new_caminho->quantidadeFilhos = 0;
+    new_caminho->menorDistanciaBorda = menorDistanciaBorda;
+    new_caminho->filho[0] = NULL;
+    new_caminho->filho[1] = NULL;
+    new_caminho->filho[2] = NULL;
     return new_caminho;
-}
-
-caminho *adicionaProximoIrmao(caminho *c, int *passos, int quantidadePassos) {
-    while (c->proximoIrmao)
-        c = c->proximoIrmao;
-
-    return (c->proximoIrmao = criaCaminho(passos, quantidadePassos));
-}
-
-caminho *adicionaFilho(caminho *c, int *passos, int quantidadePassos) {
-    if ( c->filho )
-        return adicionaProximoIrmao(c->filho, passos, quantidadePassos);
-    else
-        return (c->filho = criaCaminho(passos, quantidadePassos));
-}
-
-
-int getDistanciaBordaCimaDireita(mapa *m) {
-    fronteira *f = malloc(sizeof(fronteira));
-    f->tamanho = 0;
-    f->elementos = malloc(m->nlinhas * m->ncolunas * (sizeof(posicao)));
-
-    int **mapaAux = (int**) malloc(m->nlinhas * sizeof(int*));
-    for(int i = 0; i < m->nlinhas; i++) 
-        mapaAux[i] = (int*) malloc(m->ncolunas * sizeof(int));
-
-    getFronteira(f, m, 0, 0, m->mapa[0][0], mapaAux);
-    int menorDistancia = -1;
-    for (int i = 0; i < f->tamanho; i++) {
-        int distanciaAux = 0;
-        if (f->elementos[i].linha == m->mapa[0][m->ncolunas-1])
-            distanciaAux = m->ncolunas-1 - f->elementos[i].coluna;
-        else 
-            distanciaAux = f->elementos[i].linha + m->ncolunas-1 - f->elementos[i].coluna;
-        if (menorDistancia < 0 || distanciaAux < menorDistancia)
-            menorDistancia = distanciaAux;
-    }
-    return menorDistancia;
-}
-
-int getDistanciaBordaBaixoEsquerda() {
-
-}
-
-int getDistanciaBordaBaixoDireita() {
-
 }
 
 void criaMatrizAdjacencia(mapa *m, int countPosicoes, int matriz[countPosicoes][countPosicoes]) {
@@ -251,7 +215,9 @@ void criaMatrizAdjacencia(mapa *m, int countPosicoes, int matriz[countPosicoes][
     }
 }
 
-int dijkstra(int countPosicoes, int matriz[countPosicoes][countPosicoes], int borda) {
+menorCaminho dijkstra(int countPosicoes, int matriz[countPosicoes][countPosicoes], int borda) {
+    menorCaminho menor;
+    menor.caminhos = (int*) malloc(floor(sqrt(countPosicoes)) * sizeof(int));
     int dis[countPosicoes];
     char vis[countPosicoes];
     memset (vis, 0, sizeof (vis));
@@ -266,10 +232,68 @@ int dijkstra(int countPosicoes, int matriz[countPosicoes][countPosicoes], int bo
                 v = i;
         vis[v] = 1;
         for (i = 0; i < countPosicoes; i++)
-            if (matriz[v][i] >= 0 && dis[i] > dis[v] + matriz[v][i])
-            dis[i] = dis[v] + matriz[v][i];
+            if (matriz[v][i] >= 0 && dis[i] > dis[v] + matriz[v][i]) {
+                dis[i] = dis[v] + matriz[v][i];
+                menor.caminhos[i] = v;
+            }
     }
-    return dis[0];
+    menor.distancia = dis[0];
+    return menor;
+}
+
+int min(int distanciaBordaCimaDireita, int distanciaBordaBaixoDireita, int distanciaBordaBaixoEsquerda) {
+    if (distanciaBordaCimaDireita == 0) distanciaBordaCimaDireita = 0x7f;
+    if (distanciaBordaBaixoDireita == 0) distanciaBordaBaixoDireita = 0x7f;
+    if (distanciaBordaBaixoEsquerda == 0) distanciaBordaBaixoEsquerda = 0x7f;
+
+    if (distanciaBordaCimaDireita < distanciaBordaBaixoDireita)
+        if (distanciaBordaCimaDireita < distanciaBordaBaixoEsquerda)
+            return 0;
+        else
+            return 2;
+    else if (distanciaBordaBaixoDireita < distanciaBordaBaixoEsquerda)
+        return 1;
+    else if (distanciaBordaBaixoEsquerda != 0x7f)
+        return 2;
+    return 3;
+}
+
+int *getPassos(int *passos, int quantidadePassos, int cor) {
+    int *passosFilho = (int*) malloc(quantidadePassos+1 * sizeof(int));
+    for (int i = 0; i < quantidadePassos; i++) {
+        passosFilho[i] = passos[i];
+    }
+    passosFilho[quantidadePassos] = cor;
+    return passosFilho;
+}
+
+void adicionaCaminho(menorCaminho *menorCaminho, caminho *caminho_atual, mapa *m) {
+    int posicao = 0;
+    int aux = 0;
+    int cor = m->mapa[menorCaminho->caminhos[posicao]/m->ncolunas][menorCaminho->caminhos[posicao]%m->ncolunas];
+    while (m->mapa[0][0] == cor) {
+        aux = menorCaminho->caminhos[posicao];
+        cor = m->mapa[menorCaminho->caminhos[aux]/m->ncolunas][menorCaminho->caminhos[aux]%m->ncolunas];
+        posicao = aux;
+    }
+    caminho_atual->filho[caminho_atual->quantidadeFilhos] = criaCaminho(getPassos(caminho_atual->passos, caminho_atual->quantidadePassos, cor),(caminho_atual->quantidadePassos)+1, menorCaminho->distancia);
+    caminho_atual->quantidadeFilhos++;
+}
+
+caminho *escolheMelhorCaminho(caminho *raiz, caminho *menorCaminho) {
+    if (raiz->quantidadeFilhos == 0) {
+        int custo = raiz->quantidadePassos + raiz->menorDistanciaBorda;
+        if (custo < menorCusto) {
+            menorCusto = custo;
+            menorCaminho = raiz;
+        }
+    }
+    else {
+        for(int i = 0; i < raiz->quantidadeFilhos; i++) {
+            menorCaminho = escolheMelhorCaminho(raiz->filho[i], menorCaminho);
+        }
+    }
+    return menorCaminho;
 }
 
 int main(int argc, char **argv) {
@@ -277,6 +301,9 @@ int main(int argc, char **argv) {
     mapa m;
     int semente;
     int countPosicoes;
+    int atingiuBordaCimaDireita = 0;
+    int atingiuBordaBaixoDireita = 0;
+    int atingiuBordaBaixoEsquerda = 0;
 
     if(argc < 4 || argc > 5) {
         printf("uso: %s <numero_de_linhas> <numero_de_colunas> <numero_de_cores> [<semente_aleatoria>]\n", argv[0]);
@@ -295,12 +322,80 @@ int main(int argc, char **argv) {
         semente = -1;
     gera_mapa(&m, semente);
     mostra_mapa_cor(&m); 
+    int teste;
+    scanf("%d", &teste);
 
     //=====================================================================================================//
     caminho *raiz,*caminho_atual;
-    int *passos;
-    raiz = criaCaminho(passos, 0);
+    int *passos = NULL;
+    raiz = criaCaminho(passos, 0, 0x7f);
     caminho_atual = raiz;
+    int count = 0;
+    int mapaAux[m.nlinhas][m.ncolunas];
+    for (int linha = 0; linha < m.nlinhas; linha++)
+        for (int coluna = 0; coluna < m.ncolunas; coluna++)
+            mapaAux[linha][coluna] = m.mapa[linha][coluna];
+    while (!atingiuBordaCimaDireita || !atingiuBordaBaixoDireita || !atingiuBordaBaixoEsquerda) {
+        for (int linha = 0; linha < m.nlinhas; linha++)
+            for (int coluna = 0; coluna < m.ncolunas; coluna++)
+                m.mapa[linha][coluna] = mapaAux[linha][coluna];
+
+        for (int passo = 0; passo < caminho_atual->quantidadePassos; passo++)
+            pinta_mapa(&m, caminho_atual->passos[passo]);
+
+        criaMatrizAdjacencia(&m, countPosicoes, matriz);
+        menorCaminho distanciaBordaCimaDireita;
+        menorCaminho distanciaBordaBaixoDireita;
+        menorCaminho distanciaBordaBaixoEsquerda;
+        if (!atingiuBordaCimaDireita) {
+            distanciaBordaCimaDireita = dijkstra(countPosicoes, matriz, m.ncolunas-1);
+            if (distanciaBordaCimaDireita.distancia == 0) {
+                atingiuBordaCimaDireita = 1;
+            }
+            else
+                adicionaCaminho(&distanciaBordaCimaDireita, caminho_atual, &m);
+        }
+        if (!atingiuBordaBaixoDireita) {         
+            distanciaBordaBaixoDireita = dijkstra(countPosicoes, matriz, countPosicoes-1);
+            if (distanciaBordaBaixoDireita.distancia == 0)
+                atingiuBordaBaixoDireita = 1;
+            else {
+                adicionaCaminho(&distanciaBordaBaixoDireita, caminho_atual, &m);
+            }
+        }
+        if (!atingiuBordaBaixoEsquerda) {
+            distanciaBordaBaixoEsquerda = dijkstra(countPosicoes, matriz, countPosicoes-m.ncolunas);
+            if (distanciaBordaBaixoEsquerda.distancia == 0)
+                atingiuBordaBaixoEsquerda = 1;
+            else
+                adicionaCaminho(&distanciaBordaBaixoEsquerda, caminho_atual, &m);
+        }
+        menorCusto = 0x7f;
+        caminho *caminhoEscolhido = escolheMelhorCaminho(raiz, raiz);
+        caminho_atual = caminhoEscolhido;
+        count++;
+        printf("cor escolhida: %d\n", caminhoEscolhido->passos[caminhoEscolhido->quantidadePassos-1]);
+        pinta_mapa(&m, caminhoEscolhido->passos[caminhoEscolhido->quantidadePassos-1]);
+        mostra_mapa_cor(&m); // para mostrar sem cores use mostra_mapa(&m);
+        //scanf("%d", &cor);
+    }
+    printf("passos: %d\n", count);
+    mostra_mapa_cor(&m);
+    // printf("distancia baixo esquerda: %d\n", distanciaBordaBaixoEsquerda.distancia);
+    // for (int i = 0; i < countPosicoes; i++)
+    //     printf("%d:%d\n", i, distanciaBordaBaixoEsquerda.caminhos[i]);
+
+    //printf("min: %d\n", min(0, 2, 3));
+    // int escolha = min(distanciaBordaCimaDireita.distancia, distanciaBordaBaixoDireita.distancia, distanciaBordaBaixoEsquerda.distancia));
+    // if (escolha == 0) {
+
+    // }
+    //     //bordaCimaDireita
+    // else if (escolha == 1)
+    //     //bordaBaixoDireita
+    // else
+        //bordaBaixoEsquerda
+
     //caminho_atual->child[i]=createNode(array[i],(current_node->depth)+1);
     //caminho_atual->children++;
 
@@ -321,21 +416,21 @@ int main(int argc, char **argv) {
     // Matriz de adjacências
     // Se G[i][j] > 0, então há aresta que liga 'i' a 'j' com custo G[i][j].
     //int matriz[countPosicoes][countPosicoes];
-    criaMatrizAdjacencia(&m, countPosicoes, matriz);
-    int distanciaBordaCimaDireita = dijkstra(countPosicoes, matriz, m.ncolunas-1);
-    int distanciaBordaBaixoDireita = dijkstra(countPosicoes, matriz, countPosicoes-1);
-    int distanciaBordaBaixoEsquerda = dijkstra(countPosicoes, matriz, countPosicoes-m.ncolunas);
+    //criaMatrizAdjacencia(&m, countPosicoes, matriz);
+    //int distanciaBordaCimaDireita = dijkstra(countPosicoes, matriz, m.ncolunas-1);
+    // int distanciaBordaBaixoDireita = dijkstra(countPosicoes, matriz, countPosicoes-1);
+    // int distanciaBordaBaixoEsquerda = dijkstra(countPosicoes, matriz, countPosicoes-m.ncolunas);
     // printf("Distancia cima direita: %d\n", distanciaBordaCimaDireita);
     // printf("Distancia baixo direita: %d\n", distanciaBordaBaixoDireita);
     // printf("Distancia baixo esquerda: %d\n", distanciaBordaBaixoEsquerda);
     
 
-    scanf("%d", &cor);
-    while(cor > 0 && cor <= m.ncores) {
-        pinta_mapa(&m, cor);
-        mostra_mapa_cor(&m); // para mostrar sem cores use mostra_mapa(&m);
-        scanf("%d", &cor);
-    }
+    // scanf("%d", &cor);
+    // while(cor > 0 && cor <= m.ncores) {
+    //     pinta_mapa(&m, cor);
+    //     mostra_mapa_cor(&m); // para mostrar sem cores use mostra_mapa(&m);
+    //     scanf("%d", &cor);
+    // }
 
     return 0;
 }
