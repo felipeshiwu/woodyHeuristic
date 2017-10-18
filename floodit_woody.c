@@ -109,12 +109,6 @@ void RemoveLista(tipoLista *lista, tipoElementoLista *elemento) {
     free(elemento);
 }
 
-
-
-
-
-
-
 void gera_mapa(mapa *m, int semente) {
     int i, j;
     
@@ -359,13 +353,10 @@ int main(int argc, char **argv) {
     semente = -1;
     gera_mapa(&m, semente);
     mostra_mapa_cor(&m);
-    scanf("%d", &cor);
+    //scanf("%d", &cor);
     
     //=====================================================================================================//
-    //int *passos;
-    //raiz = criaNodo(passos, 0, 0x7f, 0, 0, 0, 0, 0, 0, 0);
-    
-    
+
     //Inicializacao da pilha de recibos e fila de clientes	
     tipoLista listaNodos;
     InicLista(&listaNodos);
@@ -388,7 +379,8 @@ int main(int argc, char **argv) {
     tipoElementoLista *caminhoEscolhido;
 
     //==========================================Ponto Direita Baixo===========================================================//
-    while (!nodo_atual->atingiuBordaBaixoDireita) {
+    while (!nodo_atual->atingiuBordaCimaDireita || !nodo_atual->atingiuBordaBaixoDireita 
+        || !nodo_atual->atingiuBordaBaixoEsquerda || !nodo_atual->atingiuBordaBaixoMeio) {
         for (int linha = 0; linha < m.nlinhas; linha++)
             for (int coluna = 0; coluna < m.ncolunas; coluna++)
                 m.mapa[linha][coluna] = mapaAux[linha][coluna];
@@ -411,37 +403,7 @@ int main(int argc, char **argv) {
                 adicionaNodo(&distanciaBordaBaixoDireita, nodo_atual, &m, &listaNodos, count);
             }
         }
-        if (nodo_atual->quantidadeFilhos > 0) {
-            RemoveLista(&listaNodos, nodo_atual);
-        }
-    	caminhoEscolhido = escolheMelhorCaminho(&listaNodos);
-        nodo_atual = caminhoEscolhido;
-        printf("tamanho lista: %d\n", count);
-        printf("teste %d\n", caminhoEscolhido->quantidadeFilhos);
-        printf("cor escolhida: %d\n", caminhoEscolhido->passos[caminhoEscolhido->quantidadePassos-1]);
-        countPassos++;
-        printf("passos ate agora: %d\n", countPassos);
-        pinta_mapa(&m, caminhoEscolhido->passos[caminhoEscolhido->quantidadePassos-1]);
-        mostra_mapa_cor(&m); // para mostrar sem cores use mostra_mapa(&m);
-        //scanf("%d", &cor);
-    }
-
-	//==========================================Ponto Direita Cima===========================================================//
-    while (!nodo_atual->atingiuBordaCimaDireita) {
-        for (int linha = 0; linha < m.nlinhas; linha++)
-            for (int coluna = 0; coluna < m.ncolunas; coluna++)
-                m.mapa[linha][coluna] = mapaAux[linha][coluna];
-            
-        for (int passo = 0; passo < nodo_atual->quantidadePassos; passo++)
-            pinta_mapa(&m, nodo_atual->passos[passo]);
-
-        criaMatrizAdjacencia(&m, countPosicoes, matriz);
-        int count = 0;
-        tipoElementoLista *teste = listaNodos.frente->prox;
-        for (teste; teste != NULL; teste = teste->prox) {
-            count++;
-		}
-		if (!nodo_atual->atingiuBordaCimaDireita) {
+        else if (!nodo_atual->atingiuBordaCimaDireita) {
             distanciaBordaCimaDireita = dijkstra(countPosicoes, matriz, m.ncolunas-1);
             if (distanciaBordaCimaDireita.distancia == 0) {
                 nodo_atual->atingiuBordaCimaDireita++;
@@ -450,37 +412,7 @@ int main(int argc, char **argv) {
                 adicionaNodo(&distanciaBordaCimaDireita, nodo_atual, &m, &listaNodos, count);
             }
         }
-        if (nodo_atual->quantidadeFilhos > 0) {
-            RemoveLista(&listaNodos, nodo_atual);
-        }
-    	caminhoEscolhido = escolheMelhorCaminho(&listaNodos);
-        nodo_atual = caminhoEscolhido;
-        printf("tamanho lista: %d\n", count);
-        printf("teste %d\n", caminhoEscolhido->quantidadeFilhos);
-        printf("cor escolhida: %d\n", caminhoEscolhido->passos[caminhoEscolhido->quantidadePassos-1]);
-        countPassos++;
-        printf("passos ate agora: %d\n", countPassos);
-        pinta_mapa(&m, caminhoEscolhido->passos[caminhoEscolhido->quantidadePassos-1]);
-        mostra_mapa_cor(&m); // para mostrar sem cores use mostra_mapa(&m);
-        //scanf("%d", &cor);
-    }
-
-    //==========================================Ponto Esquerda Baixo===========================================================//
-    while (!nodo_atual->atingiuBordaBaixoEsquerda) {
-        for (int linha = 0; linha < m.nlinhas; linha++)
-            for (int coluna = 0; coluna < m.ncolunas; coluna++)
-                m.mapa[linha][coluna] = mapaAux[linha][coluna];
-            
-        for (int passo = 0; passo < nodo_atual->quantidadePassos; passo++)
-            pinta_mapa(&m, nodo_atual->passos[passo]);
-
-        criaMatrizAdjacencia(&m, countPosicoes, matriz);
-        int count = 0;
-        tipoElementoLista *teste = listaNodos.frente->prox;
-        for (teste; teste != NULL; teste = teste->prox) {
-            count++;
-        }
-        if (!nodo_atual->atingiuBordaBaixoEsquerda) {
+        else if (!nodo_atual->atingiuBordaBaixoEsquerda) {
             distanciaBordaBaixoEsquerda = dijkstra(countPosicoes, matriz, countPosicoes-m.ncolunas);
             if (distanciaBordaBaixoEsquerda.distancia == 0) {
                 nodo_atual->atingiuBordaBaixoEsquerda++;
@@ -489,37 +421,7 @@ int main(int argc, char **argv) {
                 adicionaNodo(&distanciaBordaBaixoEsquerda, nodo_atual, &m, &listaNodos, count);
             }
         }
-        if (nodo_atual->quantidadeFilhos > 0) {
-            RemoveLista(&listaNodos, nodo_atual);
-        }
-    	caminhoEscolhido = escolheMelhorCaminho(&listaNodos);
-        nodo_atual = caminhoEscolhido;
-        printf("tamanho lista: %d\n", count);
-        printf("teste %d\n", caminhoEscolhido->quantidadeFilhos);
-        printf("cor escolhida: %d\n", caminhoEscolhido->passos[caminhoEscolhido->quantidadePassos-1]);
-        countPassos++;
-        printf("passos ate agora: %d\n", countPassos);
-        pinta_mapa(&m, caminhoEscolhido->passos[caminhoEscolhido->quantidadePassos-1]);
-        mostra_mapa_cor(&m); // para mostrar sem cores use mostra_mapa(&m);
-        //scanf("%d", &cor);
-    }
-
-    //==========================================Ponto Meio Baixo===========================================================//
-    while (!nodo_atual->atingiuBordaBaixoMeio) {
-        for (int linha = 0; linha < m.nlinhas; linha++)
-            for (int coluna = 0; coluna < m.ncolunas; coluna++)
-                m.mapa[linha][coluna] = mapaAux[linha][coluna];
-            
-        for (int passo = 0; passo < nodo_atual->quantidadePassos; passo++)
-            pinta_mapa(&m, nodo_atual->passos[passo]);
-
-        criaMatrizAdjacencia(&m, countPosicoes, matriz);
-        int count = 0;
-        tipoElementoLista *teste = listaNodos.frente->prox;
-        for (teste; teste != NULL; teste = teste->prox) {
-            count++;
-        }
-        if (!nodo_atual->atingiuBordaBaixoMeio) {
+        else if (!nodo_atual->atingiuBordaBaixoMeio) {
             distanciaBordaBaixoMeio = dijkstra(countPosicoes, matriz, countPosicoes-(m.ncolunas/2));
             if (distanciaBordaBaixoMeio.distancia == 0) {
                 nodo_atual->atingiuBordaBaixoMeio++;
@@ -531,7 +433,7 @@ int main(int argc, char **argv) {
         if (nodo_atual->quantidadeFilhos > 0) {
             RemoveLista(&listaNodos, nodo_atual);
         }
-    	caminhoEscolhido = escolheMelhorCaminho(&listaNodos);
+        caminhoEscolhido = escolheMelhorCaminho(&listaNodos);
         nodo_atual = caminhoEscolhido;
         printf("tamanho lista: %d\n", count);
         printf("teste %d\n", caminhoEscolhido->quantidadeFilhos);
@@ -545,40 +447,6 @@ int main(int argc, char **argv) {
 
 	printf("passos ate now: %d\n", caminhoEscolhido->quantidadePassos);
     //=====================================================================================================//
-
-
-
-
-    //caminho_atual->child[i]=createNode(array[i],(current_node->depth)+1);
-    //caminho_atual->children++;
-
-    //int distancia = getDistanciaBordaCimaDireita(&m);
-    //printf("distancia: %d\n", distancia);
-
-    //===========================================================================
-    // fronteira *f = calloc(sizeof(fronteira));
-	// f->tamanho = 0;
-	// f->elementos = calloc(m.nlinhas * m.ncolunas * (sizeof(posicao)));
-
-    // int **mapaAux = (int**) calloc(m.nlinhas * sizeof(int*));
-    // for(int i = 0; i < m.nlinhas; i++)
-    // mapaAux[i] = (int*) calloc(m.ncolunas * sizeof(int));
-
-    // getFronteira(f, &m, 0, 0, m.mapa[0][0], mapaAux);
-
-    // Matriz de adjacências
-    // Se G[i][j] > 0, então há aresta que liga 'i' a 'j' com custo G[i][j].
-    //int matriz[countPosicoes][countPosicoes];
-    //criaMatrizAdjacencia(&m, countPosicoes, matriz);
-    // distanciaBordaCimaDireita = dijkstra(countPosicoes, matriz, m.ncolunas-1);
-    // distanciaBordaBaixoDireita = dijkstra(countPosicoes, matriz, countPosicoes-1);
-    // distanciaBordaBaixoEsquerda = dijkstra(countPosicoes, matriz, countPosicoes-m.ncolunas);
-    // distanciaBordaMeioBaixo = dijkstra(countPosicoes, matriz, countPosicoes-m.ncolunas);
-    // distanciaBordaMeioDireita = dijkstra(countPosicoes, matriz, countPosicoes-m.ncolunas);
-    // printf("Distancia cima direita: %d\n", distanciaBordaCimaDireita);
-    // printf("Distancia baixo direita: %d\n", distanciaBordaBaixoDireita);
-	// printf("Distancia baixo esquerda: %d\n", distanciaBordaBaixoEsquerda);
-
 
     scanf("%d", &cor);
     while(cor > 0 && cor <= m.ncores) {
