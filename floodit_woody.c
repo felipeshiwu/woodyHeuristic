@@ -46,7 +46,7 @@ struct nodo {
     nodo *filho[7];
 };
 
-typedef struct tipoElementoLista{
+typedef struct tipoElementoLista {
     int *passos;
     int quantidadePassos;
     int quantidadeFilhos;
@@ -61,7 +61,7 @@ typedef struct tipoElementoLista{
     struct tipoElementoLista *prox;
 } tipoElementoLista;
 
-typedef struct tipoLista{
+typedef struct tipoLista {
     tipoElementoLista *frente, *final;
 } tipoLista;
 
@@ -119,10 +119,11 @@ int VaziaLista(tipoLista lista) {
 //Remove elementos da lista
 void RemoveLista(tipoLista *lista, tipoElementoLista *elemento) {
     tipoElementoLista *aux;
-    aux = lista->frente->prox;
+    aux = lista->frente;
     for (aux; aux != NULL; aux = aux->prox) {
         if (aux->prox == elemento) {
             aux->prox = elemento->prox;
+            elemento->prox = NULL;
             if (elemento == lista->final) {
                 lista->final = aux;
             }
@@ -377,8 +378,6 @@ tipoElementoLista *escolheMelhorCaminho(tipoLista *lista) {
     for (aux; aux != NULL; aux = aux->prox) {
         int custo = aux->quantidadePassos + aux->menorDistanciaBorda;
         int menorCusto = melhorCaminho->quantidadePassos + melhorCaminho->menorDistanciaBorda;
-        printf("custo: %d\n", custo);
-        printf("menorcusto: %d\n", menorCusto);
         if (custo < menorCusto) {
             melhorCaminho = aux;
         }
@@ -421,7 +420,7 @@ int main(int argc, char **argv) {
     InicLista(&listaNodos);
     
     tipoElementoLista *nodo_atual;
-    InsereLista(&listaNodos, NULL, 0, 0x7f, 0, 0, 0, 0, 0, 0, 0);
+    InsereLista(&listaNodos, NULL, 0, 10000, 0, 0, 0, 0, 0, 0, 0);
     nodo_atual = listaNodos.frente->prox;
     //=====================================================================================================//
     int mapaAux[m.nlinhas][m.ncolunas];
