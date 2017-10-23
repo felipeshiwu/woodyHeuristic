@@ -33,6 +33,7 @@ typedef struct nodo nodo;
 
 typedef struct tipoElementoLista {
     int *passos;
+    mapa *mapa;
     int quantidadePassos;
     int quantidadeFilhos;
     int g;
@@ -65,6 +66,7 @@ void InicLista(tipoLista *lista) {
     tipoElementoLista *l;
     l = (tipoElementoLista *)calloc(1,sizeof(tipoElementoLista));
     l->passos = NULL;
+    l->mapa = NULL;
     l->quantidadePassos = 0x7f;
     l->quantidadeFilhos = 0;
     l->g = 0;
@@ -79,10 +81,11 @@ void InicLista(tipoLista *lista) {
 }
 
 //Funcao que insere elementos na lista dos clientes
-void InsereLista(tipoLista *lista, int *passos, int quantidadePassos, int g, int menorDistanciaBorda, int bordaCD, int bordaBD, int bordaBE, int bordaBM) {
+void InsereLista(tipoLista *lista, int *passos, mapa *mapa, int quantidadePassos, int g, int menorDistanciaBorda, int bordaCD, int bordaBD, int bordaBE, int bordaBM) {
     lista->final->prox = (tipoElementoLista *)calloc(1, sizeof(tipoElementoLista));
     lista->final = lista->final->prox;
     lista->final->passos = passos;
+    lista->final->mapa = mapa;
     lista->final->quantidadePassos = quantidadePassos;
     lista->final->quantidadeFilhos = 0;
     lista->final->g = g;
@@ -242,7 +245,26 @@ int *clonaPassos(int *passos, int quantidadePassos, int cor) {
     return passosFilho;
 }
 
-void adicionaNodo(menorCaminho *menorCaminho, int borda, int distancia, tipoElementoLista *nodo_atual, mapa *m, tipoLista *lista, int count) {
+mapa clonaMapa(mapa *m, int cor) {
+    mapa mapaFilho;
+    mapaFilho.ncolunas = m->ncolunas;
+    mapaFilho.nlinhas = m->nlinhas;
+    mapaFilho.ncores = m->ncores;
+    mapaFilho.mapa = (int**) calloc(m->nlinhas, sizeof(int*));
+    for (int i = 0; i < m->nlinhas; i++) {
+        mapaFilho.mapa[i] = (int*) calloc(m->ncolunas, sizeof(int)); 
+    }
+    for (int i = 0; i < m->nlinhas; i++) {
+        for (int j = 0; j < m->ncolunas; j++) {
+            mapaFilho.mapa[i][j] = m->mapa[i][j];
+        } 
+    }
+    pinta_mapa(&mapaFilho, cor);
+    return mapaFilho;
+}
+
+void adicionaNodo(menorCaminho *menorCaminho, int borda, int distancia, tipoElementoLista *nodo_atual, tipoLista *lista, int count) {
+    mapa *m = nodo_atual->mapa;
     int posicao = borda;
     int aux = 0;
     int corAnterior = 0;
@@ -257,9 +279,11 @@ void adicionaNodo(menorCaminho *menorCaminho, int borda, int distancia, tipoElem
         }
         posicao = menorCaminho->caminhos[aux];
     }
+    mapa mapaNovo = clonaMapa(nodo_atual->mapa, cor);
     InsereLista(lista, clonaPassos(nodo_atual->passos, nodo_atual->quantidadePassos, cor),
-                (nodo_atual->quantidadePassos)+1, nodo_atual->g + 1, distancia,
-                nodo_atual->atingiuBordaCimaDireita, nodo_atual->atingiuBordaBaixoDireita, nodo_atual->atingiuBordaBaixoEsquerda, nodo_atual->atingiuBordaBaixoMeio);
+    &mapaNovo,
+    (nodo_atual->quantidadePassos)+1, nodo_atual->g + 1, distancia,
+    nodo_atual->atingiuBordaCimaDireita, nodo_atual->atingiuBordaBaixoDireita, nodo_atual->atingiuBordaBaixoEsquerda, nodo_atual->atingiuBordaBaixoMeio);
     nodo_atual->quantidadeFilhos++;
 }
 
@@ -338,13 +362,16 @@ tipoElementoLista *escolheMelhorCaminho(tipoLista *lista) {
     tipoElementoLista *melhorCaminho;
     tipoElementoLista *aux = lista->frente->prox;
     melhorCaminho = aux;
+    printf("EscolherMelhorCaminho mapa linhas: %d, mapa colunas: %d, mapa cores: %d\n", melhorCaminho->mapa->nlinhas, melhorCaminho->mapa->ncolunas, melhorCaminho->mapa->ncores);    
     for (aux; aux != NULL; aux = aux->prox) {
         int custo = aux->g + aux->menorDistanciaBorda;
         int menorCusto = melhorCaminho->g + melhorCaminho->menorDistanciaBorda;
         if (custo < menorCusto) {
             melhorCaminho = aux;
+            printf("EscolherMelhorCaminho mapa linhas: %d, mapa colunas: %d, mapa cores: %d\n", melhorCaminho->mapa->nlinhas, melhorCaminho->mapa->ncolunas, melhorCaminho->mapa->ncores);    
         }
     }
+    //printf("EscolherMelhorCaminho mapa linhas: %d, mapa colunas: %d, mapa cores: %d\n", melhorCaminho->mapa->nlinhas, melhorCaminho->mapa->ncolunas, melhorCaminho->mapa->ncores);    
     return melhorCaminho;
 }
 
@@ -354,6 +381,7 @@ int main(int argc, char **argv) {
     mapa m;
     int semente;
     int countPosicoes;
+    int testeScan;
     
     if(argc < 4 || argc > 5) {
         printf("uso: %s <numero_de_linhas> <numero_de_colunas> <numero_de_cores> [<semente_aleatoria>]\n", argv[0]);
@@ -372,26 +400,18 @@ int main(int argc, char **argv) {
     semente = -1;
     gera_mapa(&m, semente);
     mostra_mapa_cor(&m);
-    //scanf("%d", &cor);
     
     //=====================================================================================================//
-
+    
     //Inicializacao da pilha de recibos e fila de clientes	
     tipoLista listaNodos;
     InicLista(&listaNodos);
     
     tipoElementoLista *nodo_atual;
-    InsereLista(&listaNodos, NULL, 0, 0, 10000, 0, 0, 0, 0);
+    InsereLista(&listaNodos, NULL, &m, 0, 0, 10000, 0, 0, 0, 0);
     nodo_atual = listaNodos.frente->prox;
     //=====================================================================================================//
-    int mapaAux[m.nlinhas][m.ncolunas];
-
-    for (int linha = 0; linha < m.nlinhas; linha++) {
-        for (int coluna = 0; coluna < m.ncolunas; coluna++) {
-            mapaAux[linha][coluna] = m.mapa[linha][coluna];
-        }
-    }
-
+    
     //=====================================================================================================//
     int countPassos = 0;
     menorCaminho distanciaBordaCimaDireita;
@@ -400,80 +420,72 @@ int main(int argc, char **argv) {
     menorCaminho distanciaBordaBaixoMeio;
     menorCaminho distancias;
     tipoElementoLista *caminhoEscolhido;
-
+    
     //==========================================Ponto Direita Baixo===========================================================//
     while (!nodo_atual->atingiuBordaCimaDireita || !nodo_atual->atingiuBordaBaixoDireita 
         || !nodo_atual->atingiuBordaBaixoEsquerda || !nodo_atual->atingiuBordaBaixoMeio) {
-        for (int linha = 0; linha < m.nlinhas; linha++) {
-            for (int coluna = 0; coluna < m.ncolunas; coluna++) {
-                m.mapa[linha][coluna] = mapaAux[linha][coluna];
+            criaMatrizAdjacencia(nodo_atual->mapa, countPosicoes, matriz);
+            int count = 0;
+            tipoElementoLista *teste = listaNodos.frente->prox;
+            for (teste; teste != NULL; teste = teste->prox) {
+                count++;
             }
+            distancias = dijkstra(countPosicoes, matriz, countPosicoes-1, nodo_atual->mapa->ncolunas-1, countPosicoes-nodo_atual->mapa->ncolunas, countPosicoes-(nodo_atual->mapa->ncolunas/2));
+            if (!nodo_atual->atingiuBordaBaixoDireita) {
+                //distanciaBordaBaixoDireita = dijkstra(countPosicoes, matriz, countPosicoes-1);
+                if (distancias.distanciaBD == 0) {
+                    nodo_atual->atingiuBordaBaixoDireita++;
+                }
+                else {
+                    adicionaNodo(&distancias, countPosicoes-1, distancias.distanciaBD, nodo_atual, &listaNodos, count);
+                }
+            }
+            if (!nodo_atual->atingiuBordaCimaDireita) {
+                //distanciaBordaCimaDireita = dijkstra(countPosicoes, matriz, countPosicoes-1, m.ncolunas-1, countPosicoes-m.ncolunas, countPosicoes-(m.ncolunas/2));
+                if (distancias.distanciaCD == 0) {
+                    nodo_atual->atingiuBordaCimaDireita++;
+                }
+                else {
+                    adicionaNodo(&distancias, nodo_atual->mapa->ncolunas-1, distancias.distanciaCD, nodo_atual, &listaNodos, count);
+                }
+            }
+            if (!nodo_atual->atingiuBordaBaixoEsquerda) {
+                //distanciaBordaBaixoEsquerda = dijkstra(countPosicoes, matriz, countPosicoes-1, m.ncolunas-1, countPosicoes-m.ncolunas, countPosicoes-(m.ncolunas/2));
+                if (distancias.distanciaBE == 0) {
+                    nodo_atual->atingiuBordaBaixoEsquerda++;
+                }
+                else {
+                    adicionaNodo(&distancias, countPosicoes-nodo_atual->mapa->ncolunas, distancias.distanciaBE, nodo_atual, &listaNodos, count);
+                }
+            }
+            if (!nodo_atual->atingiuBordaBaixoMeio) {
+                //distanciaBordaBaixoMeio = dijkstra(countPosicoes, matriz, countPosicoes-1, m.ncolunas-1, countPosicoes-m.ncolunas, countPosicoes-(m.ncolunas/2));
+                if (distancias.distanciaBM == 0) {
+                    nodo_atual->atingiuBordaBaixoMeio++;
+                }
+                else {
+                    adicionaNodo(&distancias, countPosicoes-(nodo_atual->mapa->ncolunas/2), distancias.distanciaBM, nodo_atual, &listaNodos, count);
+                }
+            }
+            if (nodo_atual->quantidadeFilhos > 0) {
+                RemoveLista(&listaNodos, nodo_atual);
+            }
+            caminhoEscolhido = escolheMelhorCaminho(&listaNodos);
+            nodo_atual = caminhoEscolhido;
+            printf("tamanho lista: %d\n", count);
+            countPassos++;
+            printf("iteracoes ate agora: %d\n", countPassos);
+            printf("passou\n");
+            printf("mapa linhas: %d, mapa colunas: %d, mapa cores: %d\n", nodo_atual->mapa->nlinhas, nodo_atual->mapa->ncolunas, nodo_atual->mapa->ncores);
+            scanf("%d", &testeScan);
+            mostra_mapa_cor(nodo_atual->mapa); // para mostrar sem cores use mostra_mapa(&m);
+            //scanf("%d", &cor);
+            scanf("%d", &cor);
         }
-
-        for (int passo = 0; passo < nodo_atual->quantidadePassos; passo++) {
-            pinta_mapa(&m, nodo_atual->passos[passo]);
-        }
-
-        criaMatrizAdjacencia(&m, countPosicoes, matriz);
-        int count = 0;
-        tipoElementoLista *teste = listaNodos.frente->prox;
-        for (teste; teste != NULL; teste = teste->prox) {
-            count++;
-        }
-        distancias = dijkstra(countPosicoes, matriz, countPosicoes-1, m.ncolunas-1, countPosicoes-m.ncolunas, countPosicoes-(m.ncolunas/2));
-        if (!nodo_atual->atingiuBordaBaixoDireita) {
-            //distanciaBordaBaixoDireita = dijkstra(countPosicoes, matriz, countPosicoes-1);
-            if (distancias.distanciaBD == 0) {
-                nodo_atual->atingiuBordaBaixoDireita++;
-            }
-            else {
-                adicionaNodo(&distancias, countPosicoes-1, distancias.distanciaBD, nodo_atual, &m, &listaNodos, count);
-            }
-        }
-        if (!nodo_atual->atingiuBordaCimaDireita) {
-            //distanciaBordaCimaDireita = dijkstra(countPosicoes, matriz, countPosicoes-1, m.ncolunas-1, countPosicoes-m.ncolunas, countPosicoes-(m.ncolunas/2));
-            if (distancias.distanciaCD == 0) {
-                nodo_atual->atingiuBordaCimaDireita++;
-            }
-            else {
-                adicionaNodo(&distancias, m.ncolunas-1, distancias.distanciaCD, nodo_atual, &m, &listaNodos, count);
-            }
-        }
-        if (!nodo_atual->atingiuBordaBaixoEsquerda) {
-            //distanciaBordaBaixoEsquerda = dijkstra(countPosicoes, matriz, countPosicoes-1, m.ncolunas-1, countPosicoes-m.ncolunas, countPosicoes-(m.ncolunas/2));
-            if (distancias.distanciaBE == 0) {
-                nodo_atual->atingiuBordaBaixoEsquerda++;
-            }
-            else {
-                adicionaNodo(&distancias, countPosicoes-m.ncolunas, distancias.distanciaBE, nodo_atual, &m, &listaNodos, count);
-            }
-        }
-        if (!nodo_atual->atingiuBordaBaixoMeio) {
-            //distanciaBordaBaixoMeio = dijkstra(countPosicoes, matriz, countPosicoes-1, m.ncolunas-1, countPosicoes-m.ncolunas, countPosicoes-(m.ncolunas/2));
-            if (distancias.distanciaBM == 0) {
-                nodo_atual->atingiuBordaBaixoMeio++;
-            }
-            else {
-                adicionaNodo(&distancias, countPosicoes-(m.ncolunas/2), distancias.distanciaBM, nodo_atual, &m, &listaNodos, count);
-            }
-        }
-        if (nodo_atual->quantidadeFilhos > 0) {
-            RemoveLista(&listaNodos, nodo_atual);
-        }
-        caminhoEscolhido = escolheMelhorCaminho(&listaNodos);
-        nodo_atual = caminhoEscolhido;
-        printf("tamanho lista: %d\n", count);
-        countPassos++;
-        printf("iteracoes ate agora: %d\n", countPassos);
-        pinta_mapa(&m, caminhoEscolhido->passos[caminhoEscolhido->quantidadePassos-1]);
-        mostra_mapa_cor(&m); // para mostrar sem cores use mostra_mapa(&m);
-        //scanf("%d", &cor);
-    }
-
-	printf("passos ate now: %d\n", caminhoEscolhido->quantidadePassos);
-    //=====================================================================================================//
-
-    scanf("%d", &cor);
+        
+        printf("passos ate now: %d\n", caminhoEscolhido->quantidadePassos);
+        //=====================================================================================================//
+        
     while(cor > 0 && cor <= m.ncores) {
         pinta_mapa(&m, cor);
         mostra_mapa_cor(&m); // para mostrar sem cores use mostra_mapa(&m);
