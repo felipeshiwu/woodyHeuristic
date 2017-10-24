@@ -6,7 +6,6 @@
 
 #define MAXSIZE 10000
 int matriz[MAXSIZE][MAXSIZE];
-int menorCusto = 0x7f;
 
 //---------------------------------- MAPA -------------------------------------------//
 typedef struct {
@@ -16,18 +15,6 @@ typedef struct {
     int **mapa;
 } mapa;
 
-//-------------------------------- FRONTEIRA ----------------------------------------//
-typedef struct {
-    int linha;
-    int coluna;
-    int cor;
-} posicao;
-
-typedef struct {
-    int tamanho;
-    posicao *elementos;
-} fronteira;
-
 //---------------------- ARVORE DE CAMINHOS POSSIVEIS -------------------------------//
 typedef struct nodo nodo;
 
@@ -36,12 +23,7 @@ typedef struct tipoElementoLista {
     int quantidadePassos;
     int quantidadeFilhos;
     int g;
-    int menorDistanciaBorda;
-    int atingiuBordaCimaDireita;
-    int atingiuBordaBaixoDireita;
-    int atingiuBordaBaixoEsquerda;
-    int atingiuBordaBaixoMeio;
-    int atingiuBordaDireitaMeio;
+    int menorDistanciaPosicaoMaisLonge;
     struct tipoElementoLista *prox;
 } tipoElementoLista;
 
@@ -54,11 +36,6 @@ typedef struct tipoLista {
 typedef struct {
     int distancia;
     int indice;
-    int distanciaBD;
-    int distanciaCD;
-    int distanciaBE;
-    int distanciaBM;
-    int distanciaDM;
     int *caminhos;
 } menorCaminho;
 
@@ -68,43 +45,28 @@ void InicLista(tipoLista *lista) {
     tipoElementoLista *l;
     l = (tipoElementoLista *)calloc(1,sizeof(tipoElementoLista));
     l->passos = NULL;
-    l->quantidadePassos = 0x7f;
+    l->quantidadePassos = 100000;
     l->quantidadeFilhos = 0;
     l->g = 0;
-    l->menorDistanciaBorda = 0x7f;
-    l->atingiuBordaCimaDireita = 0;
-    l->atingiuBordaBaixoDireita = 0;
-    l->atingiuBordaBaixoEsquerda = 0;
-    l->atingiuBordaBaixoMeio = 0;
-    l->atingiuBordaDireitaMeio = 0;
+    l->menorDistanciaPosicaoMaisLonge = 100000;
     lista->frente = l;
     lista->final = lista->frente;
     lista->frente->prox = NULL;
 }
 
 //Funcao que insere elementos na lista dos clientes
-void InsereLista(tipoLista *lista, int *passos, int quantidadePassos, int g, int menorDistanciaBorda, int bordaCD, int bordaBD, int bordaBE, int bordaBM, int bordaDM) {
+void InsereLista(tipoLista *lista, int *passos, int quantidadePassos, int g, int menorDistanciaPosicaoMaisLonge) {
     lista->final->prox = (tipoElementoLista *)calloc(1, sizeof(tipoElementoLista));
     lista->final = lista->final->prox;
     lista->final->passos = passos;
     lista->final->quantidadePassos = quantidadePassos;
     lista->final->quantidadeFilhos = 0;
     lista->final->g = g;
-    lista->final->menorDistanciaBorda = menorDistanciaBorda;
-    lista->final->atingiuBordaCimaDireita = bordaCD;
-    lista->final->atingiuBordaBaixoDireita = bordaBD;
-    lista->final->atingiuBordaBaixoEsquerda = bordaBE;
-    lista->final->atingiuBordaBaixoMeio = bordaBM;
-    lista->final->atingiuBordaDireitaMeio = bordaDM;
+    lista->final->menorDistanciaPosicaoMaisLonge = menorDistanciaPosicaoMaisLonge;
     lista->final->prox = NULL;
 }
 
-//Testa se a lista do cliente está vazia
-int VaziaLista(tipoLista lista) {
-    return (lista.final == lista.frente);
-}
-
-//Remove elementos da lista
+//Remove elemento da lista
 void RemoveLista(tipoLista *lista, tipoElementoLista *elemento) {
     tipoElementoLista *aux;
     aux = lista->frente;
@@ -206,38 +168,6 @@ void pinta_mapa(mapa *m, int cor) {
     pinta(m, 0, 0, m->mapa[0][0], cor);
 }
 
-void getFronteira(fronteira *f, mapa *m, int linha, int coluna, int cor, int **mapaAux) {
-    if (cor == m->mapa[0][0]) {
-        mapaAux[linha][coluna] = -1;
-        if (coluna != 0 && mapaAux[linha][coluna-1] != -1)
-        getFronteira(f, m, linha, coluna - 1, m->mapa[linha][coluna-1], mapaAux);
-        if (coluna < m->ncolunas - 1 && mapaAux[linha][coluna+1] != -1)
-        getFronteira(f, m, linha, coluna + 1, m->mapa[linha][coluna+1], mapaAux);
-        if (linha != 0 && mapaAux[linha-1][coluna] != -1)
-        getFronteira(f, m, linha - 1, coluna, m->mapa[linha-1][coluna], mapaAux);
-        if (linha < m->nlinhas - 1 && mapaAux[linha+1][coluna] != -1)
-        getFronteira(f, m, linha + 1, coluna, m->mapa[linha+1][coluna], mapaAux);
-    }
-    else {
-        //Repeticao de elementos na fronteira - otimizar
-        int jaExiste = 0;
-        for (int i = 0; i < f->tamanho; i++) {
-            if (f->elementos[i].linha == linha && f->elementos[i].coluna == coluna) {
-                jaExiste = 1;
-                break;
-            }
-        }
-        if (!jaExiste) {
-            posicao elemento;
-            elemento.linha = linha;
-            elemento.coluna = coluna;
-            elemento.cor = cor;
-            f->elementos[f->tamanho] = elemento;
-            f->tamanho++;
-        }
-    }
-}
-
 int *clonaPassos(int *passos, int quantidadePassos, int cor) {
     int *passosFilho = (int*) calloc(quantidadePassos+1, sizeof(int));
     for (int i = 0; i < quantidadePassos; i++) {
@@ -247,7 +177,7 @@ int *clonaPassos(int *passos, int quantidadePassos, int cor) {
     return passosFilho;
 }
 
-void adicionaNodo(menorCaminho *menorCaminho, int borda, int distancia, tipoElementoLista *nodo_atual, mapa *m, tipoLista *lista, int count) {
+void adicionaNodo(menorCaminho *menorCaminho, int borda, int distancia, tipoElementoLista *nodo_atual, mapa *m, tipoLista *lista) {
     int posicao = borda;
     int aux = 0;
     int corAnterior = 0;
@@ -262,9 +192,8 @@ void adicionaNodo(menorCaminho *menorCaminho, int borda, int distancia, tipoElem
         }
         posicao = menorCaminho->caminhos[aux];
     }
-    InsereLista(lista, clonaPassos(nodo_atual->passos, nodo_atual->quantidadePassos, cor),
-                (nodo_atual->quantidadePassos)+1, nodo_atual->g + 1, distancia,
-                nodo_atual->atingiuBordaCimaDireita, nodo_atual->atingiuBordaBaixoDireita, nodo_atual->atingiuBordaBaixoEsquerda, nodo_atual->atingiuBordaBaixoMeio, nodo_atual->atingiuBordaDireitaMeio);
+    int *passosFilho = clonaPassos(nodo_atual->passos, nodo_atual->quantidadePassos, cor);
+    InsereLista(lista, passosFilho, nodo_atual->quantidadePassos+1, nodo_atual->g + 1, distancia);
     nodo_atual->quantidadeFilhos++;
 }
 
@@ -306,7 +235,7 @@ void criaMatrizAdjacencia(mapa *m, int countPosicoes, int matriz[countPosicoes][
     }
 }
 
-menorCaminho dijkstra(int countPosicoes, int matriz[countPosicoes][countPosicoes], int BD, int CD, int BE, int BM, int DM) {
+menorCaminho dijkstra(int countPosicoes, int matriz[countPosicoes][countPosicoes]) {
     menorCaminho menor;
     menor.caminhos = (int*) calloc(countPosicoes, sizeof(int));
     int dis[countPosicoes];
@@ -331,14 +260,8 @@ menorCaminho dijkstra(int countPosicoes, int matriz[countPosicoes][countPosicoes
             }
         }
     }
-    menor.distanciaBD = dis[BD];
-    menor.distanciaCD = dis[CD];
-    menor.distanciaBE = dis[BE];
-    menor.distanciaBM = dis[BM];
-    menor.distanciaDM = dis[DM];
     int maior = 0;
     int indice = 0;
-    int teste = 0;
     for (int i = 0; i < countPosicoes; i++) {
         if (dis[i] > maior) {
             maior = dis[i];
@@ -355,8 +278,8 @@ tipoElementoLista *escolheMelhorCaminho(tipoLista *lista) {
     tipoElementoLista *aux = lista->frente->prox;
     melhorCaminho = aux;
     for (aux; aux != NULL; aux = aux->prox) {
-        int custo = aux->g + aux->menorDistanciaBorda;
-        int menorCusto = melhorCaminho->g + melhorCaminho->menorDistanciaBorda;
+        int custo = aux->g + aux->menorDistanciaPosicaoMaisLonge;
+        int menorCusto = melhorCaminho->g + melhorCaminho->menorDistanciaPosicaoMaisLonge;
         if (custo < menorCusto) {
             melhorCaminho = aux;
         }
@@ -366,7 +289,6 @@ tipoElementoLista *escolheMelhorCaminho(tipoLista *lista) {
 
 
 int main(int argc, char **argv) {
-    int cor;
     mapa m;
     int semente;
     int countPosicoes;
@@ -382,22 +304,20 @@ int main(int argc, char **argv) {
     
     countPosicoes = m.nlinhas * m.ncolunas;
     
-    if(argc == 5)
-    semente = atoi(argv[4]);
-    else
-    semente = -1;
+    if (argc == 5) {
+        semente = atoi(argv[4]);
+    }
+    else {
+        semente = -1;
+    }
     gera_mapa(&m, semente);
-    mostra_mapa_cor(&m);
-    //scanf("%d", &cor);
     
     //=====================================================================================================//
-
-    //Inicializacao da pilha de recibos e fila de clientes	
     tipoLista listaNodos;
     InicLista(&listaNodos);
     
     tipoElementoLista *nodo_atual;
-    InsereLista(&listaNodos, NULL, 0, 0, 10000, 0, 0, 0, 0, 0);
+    InsereLista(&listaNodos, NULL, 0, 0, 10000);
     nodo_atual = listaNodos.frente->prox;
     //=====================================================================================================//
     int mapaAux[m.nlinhas][m.ncolunas];
@@ -409,20 +329,9 @@ int main(int argc, char **argv) {
     }
 
     //=====================================================================================================//
-    int countPassos = 0;
-    menorCaminho distanciaBordaCimaDireita;
-    menorCaminho distanciaBordaBaixoDireita;
-    menorCaminho distanciaBordaBaixoEsquerda;
-    menorCaminho distanciaBordaBaixoMeio;
-    menorCaminho distanciaBordaDireitaMeio;
-    menorCaminho distancias;
+    menorCaminho menorCaminho;
     tipoElementoLista *caminhoEscolhido;
     int isCompleto = 0;
-
-    //==========================================Ponto Direita Baixo===========================================================//
-    // while (!nodo_atual->atingiuBordaCimaDireita || !nodo_atual->atingiuBordaBaixoDireita 
-    //     || !nodo_atual->atingiuBordaBaixoEsquerda || !nodo_atual->atingiuBordaBaixoMeio 
-    //     || !nodo_atual->atingiuBordaDireitaMeio) {
     while (!isCompleto) {
         for (int linha = 0; linha < m.nlinhas; linha++) {
             for (int coluna = 0; coluna < m.ncolunas; coluna++) {
@@ -435,82 +344,32 @@ int main(int argc, char **argv) {
         }
 
         criaMatrizAdjacencia(&m, countPosicoes, matriz);
-        int count = 0;
-        tipoElementoLista *teste = listaNodos.frente->prox;
-        for (teste; teste != NULL; teste = teste->prox) {
-            count++;
-        }
-        distancias = dijkstra(countPosicoes, matriz, countPosicoes-1, m.ncolunas-1, countPosicoes-m.ncolunas, countPosicoes-(m.ncolunas/2), countPosicoes-((m.nlinhas/2)*m.ncolunas));
-        adicionaNodo(&distancias, distancias.indice, distancias.distancia, nodo_atual, &m, &listaNodos, count);
-        // if (!nodo_atual->atingiuBordaBaixoDireita) {
-        //     //distanciaBordaBaixoDireita = dijkstra(countPosicoes, matriz, countPosicoes-1);
-        //     if (distancias.distanciaBD == 0) {
-        //         nodo_atual->atingiuBordaBaixoDireita++;
-        //     }
-        //     else {
-        //         adicionaNodo(&distancias, countPosicoes-1, distancias.distanciaBD, nodo_atual, &m, &listaNodos, count);
-        //     }
-        // }
-        // else if (!nodo_atual->atingiuBordaCimaDireita) {
-        //     //distanciaBordaCimaDireita = dijkstra(countPosicoes, matriz, countPosicoes-1, m.ncolunas-1, countPosicoes-m.ncolunas, countPosicoes-(m.ncolunas/2));
-        //     if (distancias.distanciaCD == 0) {
-        //         nodo_atual->atingiuBordaCimaDireita++;
-        //     }
-        //     else {
-        //         adicionaNodo(&distancias, m.ncolunas-1, distancias.distanciaCD, nodo_atual, &m, &listaNodos, count);
-        //     }
-        // }
-        // else if (!nodo_atual->atingiuBordaBaixoEsquerda) {
-        //     //distanciaBordaBaixoEsquerda = dijkstra(countPosicoes, matriz, countPosicoes-1, m.ncolunas-1, countPosicoes-m.ncolunas, countPosicoes-(m.ncolunas/2));
-        //     if (distancias.distanciaBE == 0) {
-        //         nodo_atual->atingiuBordaBaixoEsquerda++;
-        //     }
-        //     else {
-        //         adicionaNodo(&distancias, countPosicoes-m.ncolunas, distancias.distanciaBE, nodo_atual, &m, &listaNodos, count);
-        //     }
-        // }
-        // else if (!nodo_atual->atingiuBordaBaixoMeio) {
-        //     //distanciaBordaBaixoMeio = dijkstra(countPosicoes, matriz, countPosicoes-1, m.ncolunas-1, countPosicoes-m.ncolunas, countPosicoes-(m.ncolunas/2));
-        //     if (distancias.distanciaBM == 0) {
-        //         nodo_atual->atingiuBordaBaixoMeio++;
-        //     }
-        //     else {
-        //         adicionaNodo(&distancias, countPosicoes-(m.ncolunas/2), distancias.distanciaBM, nodo_atual, &m, &listaNodos, count);
-        //     }
-        // }
-        // else if (!nodo_atual->atingiuBordaDireitaMeio) {
-        //     //distanciaBordaBaixoMeio = dijkstra(countPosicoes, matriz, countPosicoes-1, m.ncolunas-1, countPosicoes-m.ncolunas, countPosicoes-(m.ncolunas/2));
-        //     if (distancias.distanciaDM == 0) {
-        //         nodo_atual->atingiuBordaDireitaMeio++;
-        //     }
-        //     else {
-        //         adicionaNodo(&distancias, countPosicoes-((m.nlinhas/2)*m.ncolunas), distancias.distanciaDM, nodo_atual, &m, &listaNodos, count);
-        //     }
-        // }
+
+        menorCaminho = dijkstra(countPosicoes, matriz);
+        adicionaNodo(&menorCaminho, menorCaminho.indice, menorCaminho.distancia, nodo_atual, &m, &listaNodos);
         if (nodo_atual->quantidadeFilhos > 0) {
             RemoveLista(&listaNodos, nodo_atual);
         }
         caminhoEscolhido = escolheMelhorCaminho(&listaNodos);
         nodo_atual = caminhoEscolhido;
-        printf("tamanho lista: %d\n", count);
-        countPassos++;
-        printf("iteracoes ate agora: %d\n", countPassos);
-        printf("atingiu direita meio: %d\n", nodo_atual->atingiuBordaDireitaMeio);
         pinta_mapa(&m, caminhoEscolhido->passos[caminhoEscolhido->quantidadePassos-1]);
-        mostra_mapa_cor(&m); // para mostrar sem cores use mostra_mapa(&m);
-        //scanf("%d", &cor);
-        int testeCor = m.mapa[0][0];
+        //mostra_mapa_cor(&m); 
+
+        int corFundo = m.mapa[0][0];
         isCompleto = 1;
         for (int k = 0; k < m.nlinhas; k++) {
             for (int w = 1; w < m.ncolunas; w++) {
-                if (testeCor != m.mapa[k][w]) {
+                if (corFundo != m.mapa[k][w]) {
                     isCompleto = 0;
                 }
             }
         }
     }
 
-	printf("passos ate now: %d\n", caminhoEscolhido->quantidadePassos);
+    printf("%d\n", nodo_atual->quantidadePassos);
+    for (int i = 0; i < nodo_atual->quantidadePassos; i++) {
+        printf("%d ", nodo_atual->passos[i]);
+    }
     //=====================================================================================================//
 
     return 0;
