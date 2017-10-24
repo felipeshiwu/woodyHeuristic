@@ -388,7 +388,7 @@ int main(int argc, char **argv) {
     semente = -1;
     gera_mapa(&m, semente);
     mostra_mapa_cor(&m);
-    scanf("%d", &cor);
+    //scanf("%d", &cor);
     
     //=====================================================================================================//
 
@@ -512,13 +512,6 @@ int main(int argc, char **argv) {
 
 	printf("passos ate now: %d\n", caminhoEscolhido->quantidadePassos);
     //=====================================================================================================//
-
-    scanf("%d", &cor);
-    while(cor > 0 && cor <= m.ncores) {
-        pinta_mapa(&m, cor);
-        mostra_mapa_cor(&m); // para mostrar sem cores use mostra_mapa(&m);
-        scanf("%d", &cor);
-    }
 
     return 0;
 }
