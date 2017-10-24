@@ -332,7 +332,6 @@ int main(int argc, char **argv) {
     menorCaminho menorCaminho;
     tipoElementoLista *caminhoEscolhido;
     int isCompleto = 0;
-
     while (!isCompleto) {
         for (int linha = 0; linha < m.nlinhas; linha++) {
             for (int coluna = 0; coluna < m.ncolunas; coluna++) {
