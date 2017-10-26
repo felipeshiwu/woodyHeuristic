@@ -1,44 +1,76 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <time.h>
+#include "trab1_ia.h"
 
-#define MAXSIZE 10000
-int matriz[MAXSIZE][MAXSIZE];
+int main(int argc, char **argv) {
+    mapa m;
+    int semente;
+    int countPosicoes;
 
-//---------------------------------- MAPA -------------------------------------------//
-typedef struct {
-    int nlinhas;
-    int ncolunas;
-    int ncores;
-    int **mapa;
-} mapa;
+  	carrega_mapa(&m);
 
-//---------------------- ARVORE DE CAMINHOS POSSIVEIS -------------------------------//
-typedef struct nodo nodo;
+    countPosicoes = m.nlinhas * m.ncolunas;
 
-typedef struct tipoElementoLista {
-    int *passos;
-    int quantidadePassos;
-    int quantidadeFilhos;
-    int g;
-    int menorDistanciaPosicaoMaisLonge;
-    struct tipoElementoLista *prox;
-} tipoElementoLista;
+    //=====================================================================================================//
+    tipoLista listaNodos;
+    InicLista(&listaNodos);
 
-typedef struct tipoLista {
-    tipoElementoLista *frente, *final;
-} tipoLista;
+    tipoElementoLista *nodo_atual;
+    InsereLista(&listaNodos, NULL, 0, 0, 10000);
+    nodo_atual = listaNodos.frente->prox;
+    //=====================================================================================================//
+    int mapaAux[m.nlinhas][m.ncolunas];
 
+    for (int linha = 0; linha < m.nlinhas; linha++) {
+        for (int coluna = 0; coluna < m.ncolunas; coluna++) {
+            mapaAux[linha][coluna] = m.mapa[linha][coluna];
+        }
+    }
 
-//------------------------------ GRAFO ----------------------------------------------//
-typedef struct {
-    int distancia;
-    int indice;
-    int *caminhos;
-} menorCaminho;
+    //=====================================================================================================//
+    menorCaminho menorCaminho;
+    tipoElementoLista *caminhoEscolhido;
+    int isCompleto = 0;
+    while (!isCompleto) {
+        for (int linha = 0; linha < m.nlinhas; linha++) {
+            for (int coluna = 0; coluna < m.ncolunas; coluna++) {
+                m.mapa[linha][coluna] = mapaAux[linha][coluna];
+            }
+        }
 
+        for (int passo = 0; passo < nodo_atual->quantidadePassos; passo++) {
+            pinta_mapa(&m, nodo_atual->passos[passo]);
+        }
+
+        criaMatrizAdjacencia(&m, countPosicoes, matriz);
+
+        menorCaminho = dijkstra(countPosicoes, matriz);
+        adicionaNodo(&menorCaminho, menorCaminho.indice, menorCaminho.distancia, nodo_atual, &m, &listaNodos);
+        if (nodo_atual->quantidadeFilhos > 0) {
+            RemoveLista(&listaNodos, nodo_atual);
+        }
+        caminhoEscolhido = escolheMelhorCaminho(&listaNodos);
+        nodo_atual = caminhoEscolhido;
+        pinta_mapa(&m, caminhoEscolhido->passos[caminhoEscolhido->quantidadePassos-1]);
+
+        int corFundo = m.mapa[0][0];
+        isCompleto = 1;
+        for (int k = 0; k < m.nlinhas; k++) {
+            for (int w = 1; w < m.ncolunas; w++) {
+                if (corFundo != m.mapa[k][w]) {
+                    isCompleto = 0;
+                }
+            }
+        }
+    }
+
+    printf("%d\n", nodo_atual->quantidadePassos);
+    for (int i = 0; i < nodo_atual->quantidadePassos; i++) {
+        printf("%d ", nodo_atual->passos[i]);
+    }
+    //=====================================================================================================//
+    printf("\n");
+
+    return 0;
+}
 
 //Funcao que inicializa a lista de compras dos clientes
 void InicLista(tipoLista *lista) {
@@ -85,7 +117,7 @@ void RemoveLista(tipoLista *lista, tipoElementoLista *elemento) {
 
 void gera_mapa(mapa *m, int semente) {
     int i, j;
-    
+
     if(semente < 0)
     srand(time(NULL));
     else
@@ -95,58 +127,6 @@ void gera_mapa(mapa *m, int semente) {
         m->mapa[i] = (int*) calloc(m->ncolunas, sizeof(int));
         for(j = 0; j < m->ncolunas; j++)
         m->mapa[i][j] = 1 + rand() % m->ncores;
-    }
-}
-
-void carrega_mapa(mapa *m) {
-    int i, j;
-    
-    scanf("%d", &(m->nlinhas));
-    scanf("%d", &(m->ncolunas));
-    scanf("%d", &(m->ncores));
-    m->mapa = (int**) calloc(m->nlinhas, sizeof(int*));
-    for(i = 0; i < m->nlinhas; i++) {
-        m->mapa[i] = (int*) calloc(m->ncolunas, sizeof(int));
-        for(j = 0; j < m->ncolunas; j++)
-        scanf("%d", &(m->mapa[i][j]));
-    }
-}
-
-void mostra_mapa(mapa *m) {
-    int i, j;
-    
-    printf("%d %d %d\n", m->nlinhas, m->ncolunas, m->ncores);
-    for(i = 0; i < m->nlinhas; i++) {
-        for(j = 0; j < m->ncolunas; j++)
-        if(m->ncores > 10)
-        printf("%3d", m->mapa[i][j]);
-        else
-        printf("%3d ", m->mapa[i][j]);
-        printf("\n");
-    }
-}
-
-void mostra_mapa_cor(mapa *m) {
-    int i, j;
-    char* cor_ansi[] = { "\x1b[0m",
-    "\x1b[31m", "\x1b[32m", "\x1b[33m",
-    "\x1b[34m", "\x1b[35m", "\x1b[36m",
-    "\x1b[37m", "\x1b[30;1m", "\x1b[31;1m",
-    "\x1b[32;1m", "\x1b[33;1m", "\x1b[34;1m",
-    "\x1b[35;1m", "\x1b[36;1m", "\x1b[37;1m" };
-    
-    if(m->ncores > 15) {
-        mostra_mapa(m);
-        return;
-    }
-    printf("%d %d %d\n", m->nlinhas, m->ncolunas, m->ncores);
-    for(i = 0; i < m->nlinhas; i++) {
-        for(j = 0; j < m->ncolunas; j++)
-        if(m->ncores > 10)
-        printf("%s%3d%s", cor_ansi[m->mapa[i][j]], m->mapa[i][j], cor_ansi[0]);
-        else
-        printf("%s%3d%s ", cor_ansi[m->mapa[i][j]], m->mapa[i][j], cor_ansi[0]);
-        printf("\n");
     }
 }
 
@@ -168,6 +148,7 @@ void pinta_mapa(mapa *m, int cor) {
     pinta(m, 0, 0, m->mapa[0][0], cor);
 }
 
+// Clona os passos do pai e adiciona a cor escolhida, criando o filho
 int *clonaPassos(int *passos, int quantidadePassos, int cor) {
     int *passosFilho = (int*) calloc(quantidadePassos+1, sizeof(int));
     for (int i = 0; i < quantidadePassos; i++) {
@@ -287,90 +268,16 @@ tipoElementoLista *escolheMelhorCaminho(tipoLista *lista) {
     return melhorCaminho;
 }
 
+void carrega_mapa(mapa *m) {
+  int i, j;
 
-int main(int argc, char **argv) {
-    mapa m;
-    int semente;
-    int countPosicoes;
-    
-    if(argc < 4 || argc > 5) {
-        printf("uso: %s <numero_de_linhas> <numero_de_colunas> <numero_de_cores> [<semente_aleatoria>]\n", argv[0]);
-        exit(1);
-    }
-    
-    m.nlinhas = atoi(argv[1]);
-    m.ncolunas = atoi(argv[2]);
-    m.ncores = atoi(argv[3]);
-    
-    countPosicoes = m.nlinhas * m.ncolunas;
-    
-    if (argc == 5) {
-        semente = atoi(argv[4]);
-    }
-    else {
-        semente = -1;
-    }
-    gera_mapa(&m, semente);
-    
-    //=====================================================================================================//
-    tipoLista listaNodos;
-    InicLista(&listaNodos);
-    
-    tipoElementoLista *nodo_atual;
-    InsereLista(&listaNodos, NULL, 0, 0, 10000);
-    nodo_atual = listaNodos.frente->prox;
-    //=====================================================================================================//
-    int mapaAux[m.nlinhas][m.ncolunas];
-
-    for (int linha = 0; linha < m.nlinhas; linha++) {
-        for (int coluna = 0; coluna < m.ncolunas; coluna++) {
-            mapaAux[linha][coluna] = m.mapa[linha][coluna];
-        }
-    }
-
-    //=====================================================================================================//
-    menorCaminho menorCaminho;
-    tipoElementoLista *caminhoEscolhido;
-    int isCompleto = 0;
-    while (!isCompleto) {
-        for (int linha = 0; linha < m.nlinhas; linha++) {
-            for (int coluna = 0; coluna < m.ncolunas; coluna++) {
-                m.mapa[linha][coluna] = mapaAux[linha][coluna];
-            }
-        }
-
-        for (int passo = 0; passo < nodo_atual->quantidadePassos; passo++) {
-            pinta_mapa(&m, nodo_atual->passos[passo]);
-        }
-
-        criaMatrizAdjacencia(&m, countPosicoes, matriz);
-
-        menorCaminho = dijkstra(countPosicoes, matriz);
-        adicionaNodo(&menorCaminho, menorCaminho.indice, menorCaminho.distancia, nodo_atual, &m, &listaNodos);
-        if (nodo_atual->quantidadeFilhos > 0) {
-            RemoveLista(&listaNodos, nodo_atual);
-        }
-        caminhoEscolhido = escolheMelhorCaminho(&listaNodos);
-        nodo_atual = caminhoEscolhido;
-        pinta_mapa(&m, caminhoEscolhido->passos[caminhoEscolhido->quantidadePassos-1]);
-        //mostra_mapa_cor(&m); 
-
-        int corFundo = m.mapa[0][0];
-        isCompleto = 1;
-        for (int k = 0; k < m.nlinhas; k++) {
-            for (int w = 1; w < m.ncolunas; w++) {
-                if (corFundo != m.mapa[k][w]) {
-                    isCompleto = 0;
-                }
-            }
-        }
-    }
-
-    printf("%d\n", nodo_atual->quantidadePassos);
-    for (int i = 0; i < nodo_atual->quantidadePassos; i++) {
-        printf("%d ", nodo_atual->passos[i]);
-    }
-    //=====================================================================================================//
-
-    return 0;
+  scanf("%d", &(m->nlinhas));
+  scanf("%d", &(m->ncolunas));
+  scanf("%d", &(m->ncores));
+  m->mapa = (int**) malloc(m->nlinhas * sizeof(int*));
+  for(i = 0; i < m->nlinhas; i++) {
+    m->mapa[i] = (int*) malloc(m->ncolunas * sizeof(int));
+    for(j = 0; j < m->ncolunas; j++)
+      scanf("%d", &(m->mapa[i][j]));
+  }
 }
