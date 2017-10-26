@@ -52,3 +52,4 @@ void adicionaNodo(menorCaminho *menorCaminho, int borda, int distancia, tipoElem
 void criaMatrizAdjacencia(mapa *m, int countPosicoes, int matriz[countPosicoes][countPosicoes]);
 menorCaminho dijkstra(int countPosicoes, int matriz[countPosicoes][countPosicoes]);
 tipoElementoLista *escolheMelhorCaminho(tipoLista *lista);
+void carrega_mapa(mapa *m);

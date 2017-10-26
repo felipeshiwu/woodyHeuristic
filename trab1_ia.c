@@ -5,24 +5,9 @@ int main(int argc, char **argv) {
     int semente;
     int countPosicoes;
 
-    if(argc < 4 || argc > 5) {
-        printf("uso: %s <numero_de_linhas> <numero_de_colunas> <numero_de_cores> [<semente_aleatoria>]\n", argv[0]);
-        exit(1);
-    }
-
-    m.nlinhas = atoi(argv[1]);
-    m.ncolunas = atoi(argv[2]);
-    m.ncores = atoi(argv[3]);
+  	carrega_mapa(&m);
 
     countPosicoes = m.nlinhas * m.ncolunas;
-
-    if (argc == 5) {
-        semente = atoi(argv[4]);
-    }
-    else {
-        semente = -1;
-    }
-    gera_mapa(&m, semente);
 
     //=====================================================================================================//
     tipoLista listaNodos;
@@ -281,4 +266,18 @@ tipoElementoLista *escolheMelhorCaminho(tipoLista *lista) {
         }
     }
     return melhorCaminho;
+}
+
+void carrega_mapa(mapa *m) {
+  int i, j;
+
+  scanf("%d", &(m->nlinhas));
+  scanf("%d", &(m->ncolunas));
+  scanf("%d", &(m->ncores));
+  m->mapa = (int**) malloc(m->nlinhas * sizeof(int*));
+  for(i = 0; i < m->nlinhas; i++) {
+    m->mapa[i] = (int*) malloc(m->ncolunas * sizeof(int));
+    for(j = 0; j < m->ncolunas; j++)
+      scanf("%d", &(m->mapa[i][j]));
+  }
 }

@@ -2,35 +2,43 @@
 #	Trabalho de IA = 2017/2
 #	Prof: Fabiano
 #	Alunos: Felipe Shi Iu Wu - GRR20157578
-#		Lucas Olini - GRR20157108
+#			Lucas Olini - GRR20157108
 #===========================================================================================================#
 
 	O trabalho consistia em implementar um programa em C que jogue o Floodit ate alcancar o tabuleiro
 todo com uma unica cor. Foi disponibilizado algumas heuristicas pelo professor, e era primordial ganhar
-dos floodit_h1 e floodit_h2.
-	Em primeiro momento, o que fizemos foi entender como funcionava o algoritmo do H1 e H2
+dos floodit_h1 e floodit_h2, e prover uma solucao em ate 5 minutos de execucao, utilizando no maximo 8gb de
+RAM.
+	Em primeiro momento, o que fizemos foi entender como funcionava o algoritmo do H1 e H2,
 disponibilizado pelo professor, ficamos tentados a implementar a nossa heuristica baseada na fronteira da
 fronteira, ou ate mesmo da fronteira da fronteira da fronteira, o que foi discutindo em sala que nao seria
-plausivel. Partimos entao para a implementacao de uma nova heuristica que consistia em alcancar todos os
-cantos, partindo do mais proximo, com isso, implementamos a maior parte da estrutura de dados utilizado
-no trabalho, implementamos uma matriz de adjacencia, cujo, cada vertice representava uma casa no tabuleiro
-do jogo. Implementamos tambem um algoritmo de Dijkstra que rodava na matriz de adjacencia. Tivemos problemas
-na hora de montar a arvore que contia os possiveis caminhos, tentamos implementar a arvore com nodos, o que
-nao deu muito certo, por conta da manipulacao, com isso, implementamos uma lista encadeada que guarda as
-folhas da arvore.
-	Nosso algoritmo atual utiliza a matriz de adjacencia para montar o grafo, utiliza a lista encadeada
-para guardar as folhas e a heuristica consiste em procurar o menor caminho ate o ponto mais distante, o loop
-termina quando o tabuleiro todo esteja pintado com uma cor apenas. Essa heuristica evolui daquela que
-pensamos inicialmente, a que alcancava os 4 cantos com o menor caminho retornado por Dijkstra, no entanto,
-tivemos varios casos em que mesmo alcancando os 4 cantos, ainda restavam casas no tabuleiro sem pintar, o
-que nos leva a pensar uma forma de calcular um ponto dinamicamente ate que garanta a colocarao unica do
-tabuleiro, pensamos em varias formas, incluindo sortear casas, ainda nao pintadas, aleatoriamente.
+plausivel. Partimos entao para a implementacao de uma nova heuristica que consistia em alcancar todos as
+bordas do mapa, partindo da mais proxima. Com isso, implementamos a maior parte da estrutura de dados 
+utilizada no trabalho, implementamos uma matriz de adjacencia, cujo, cada vertice representava uma casa no 
+tabuleiro do jogo. Implementamos tambem um algoritmo de Dijkstra que rodava na matriz de adjacencia. 
+Tivemos problemas na hora de montar a arvore que contia os possiveis caminhos, tentamos implementar a arvore
+com nodos, o que nao deu muito certo, por conta da manipulacao, sendo assim, implementamos uma lista 
+encadeada que guarda as folhas da arvore.
+	Porem, esta implementacao nao estava correta, pois, alem de nao prover uma solucao em ate 5 minutos,
+nao era uma heuristica admissivel, visto que a mesma nao calculava a distancia ate o nodo final(tabuleiro
+completo), mas apenas ate a borda mais proxima. Sendo assim, apos termos estes problemas tecnicos e 
+conceituais, decidimos mudar a heuristica utilizada no algoritmo.
+	Sendo assim, nosso algoritmo atual utiliza a matriz de adjacencia para montar o grafo, utiliza a lista 
+encadeada para guardar as folhas e a heuristica consiste em procurar o menor caminho ate o ponto mais 
+distante, calculando toda vez que o mapa eh pintado de uma nova cor. O loop termina quando o tabuleiro 
+todo esta pintado com uma cor apenas. Essa heuristica evolui daquela que pensamos inicialmente, a que
+alcancava as 4 bordas com o menor caminho retornado por Dijkstra, no entanto, tivemos varios casos em que
+mesmo alcancando as 4 bordas, ainda restavam casas no tabuleiro sem pintar. Nos levou a pensar uma
+forma de calcular um ponto dinamicamente ate que garanta a coloracao unica do tabuleiro. Pensamos em
+varias formas, incluindo sortear casas, ainda nao pintadas, aleatoriamente.
 	Apos testes, percebemos que uma forma eficiente seria encontrar o ponto mais distante e achar o
 caminho mais curto ate ele, com isso, nasce a nossa heuristica atual.
 	A nossa implementacao expande novas folhas e soma os passos que faltam com o caminho percorrido,
-f(x) = g(x) + h(x), no entanto, percebemos que o algoritmo faz uma busca mais gulosa do que A*, isso
-resulta do fato do Floodit ser um jogo com o tabuleiro pouco mutavel considerando que, quando vc roda o
-algoritmo, ele tende a seguir a esolha feita, tornando o g(x) pouco influente na tomada da decisao.
+f(x) = g(x) + h(x), no entanto, percebemos que o algoritmo faz uma busca gulosa, pois a cada loop, apenas
+um caminho eh inserido na lista de folhas ao passo que o pai deste eh removido da lista, tendo sendo
+apenas um caminho disponivel na lista. Com isso, mesmo que o calculo do f(x) seja feito e exista a logica
+de escolha do caminho baseado no menor custo, o algoritmo nunca volta na arvore, caracterizando a busca
+gulosa.
 	A conclusao eh um algoritmo que vence facilmente do H1 e H2, alem de manter uma media inferior ao H4
-e H5. Ja o H3 nao rodou no tabuleiro 100 100 10 no tempo de 5 min.
+e H5.
 
