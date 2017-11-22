@@ -37,8 +37,49 @@ int main(int argc, char **argv) {
         scanf("%c", &lixo);
     }
 
+
+
+
+
+
+    nodo *n = novoNodo(c_tamanho-1, 3);
+    n->filhos[0] = novoNodo(10, 3);
+    //n->children[1] is NULL
+    n->filhos[2] = novoNodo(15, 3);
+ 
+    free(n->filhos[0]);
+    free(n);
+
     return 0;
 }
+
+
+nodo *novoNodo(int n, int val) {
+    nodo *x = calloc(sizeof(nodo) + n*sizeof(nodo*), 1);
+    x->val = val;
+    return x;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void ImprimeCampo (char *campo, int c_tamanho) {
     for (int i=0; i<=c_tamanho+1; ++i) {
