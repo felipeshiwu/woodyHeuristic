@@ -15,5 +15,7 @@ typedef struct nodo nodo;
 
 void ImprimeCampo (char *campo, int c_tamanho);
 void InsereFilosofo (char *campo);
+void InsereFilosofoAuto (char *campo, int pos);
 void MoveBola (char *campo, int *p_bola);
+void MoveBolaAuto (char *campo, int *p_bola, int pos);
 nodo *novoNodo(int n, int val, char *campo, int c_tamanho);

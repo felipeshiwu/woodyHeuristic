@@ -34,6 +34,64 @@ int main(int argc, char **argv) {
                 break;
         }
         ImprimeCampo(campo, c_tamanho);
+        //Lado Esquerdo
+        if (lado == 'e') {
+            if (campo[p_bola+1] == '.') {
+                // printf("primeiro if\n");
+                InsereFilosofoAuto(campo, p_bola+1);
+            } else if (campo[p_bola-1] == 'f') {
+                // printf("segundo if\n");
+                int aux = p_bola+1;
+                do {
+                    aux++;
+                    while(campo[aux] != '.' && campo[aux] != 'v')
+                        aux++;
+                    MoveBolaAuto(campo, &p_bola, aux);
+                    if (campo[aux] == 'v') break;
+                } while (campo[aux+1] == 'f');
+            } else {
+                // printf("terceiro if\n");
+                int aux = p_bola+1;
+                do {
+                    aux++;
+                    while(campo[aux] != '.' && campo[aux] != 'v')
+                        aux++;
+                    if (campo[aux] == 'v')
+                        MoveBolaAuto(campo, &p_bola, aux);
+                    else if (campo[aux+1] == '.')
+                        InsereFilosofoAuto(campo, aux+1);
+                } while (campo[aux+1] == 'f');
+            }
+        } else if (lado == 'd') { //Lado Direito
+            if (campo[p_bola-1] == '.') {
+                InsereFilosofoAuto(campo, p_bola-1);
+            } else if (campo[p_bola+1] == 'f') {
+                int aux = p_bola-1;
+                do {
+                    aux--;
+                    while(campo[aux] != '.' && campo[aux] != 'v')
+                        aux--;
+                    MoveBolaAuto(campo, &p_bola, aux);
+                    if (campo[aux] == 'v') break;
+                } while (campo[aux-1] == 'f');
+            } else {
+                int aux = p_bola-1;
+                do {
+                    aux--;
+                    while(campo[aux] != '.' && campo[aux] != 'v')
+                        aux--;
+                    if (campo[aux] == 'v')
+                        MoveBolaAuto(campo, &p_bola, aux);
+                    else if (campo[aux-1] == '.')
+                        InsereFilosofoAuto(campo, aux-1);
+                } while (campo[aux-1] == 'f');
+            }
+        }
+        ImprimeCampo(campo, c_tamanho);
+        scanf("%c", &lixo);
+    }
+        //MINIMAX
+        /*
         //Cria a arvore
         nodo *raiz = novoNodo(c_tamanho-1, 0, campo, c_tamanho);
         int countFilhos = 0;
@@ -56,8 +114,20 @@ int main(int argc, char **argv) {
                         valor *= -1;
                     raiz->filhos[countFilhos] = novoNodo(c_tamanho-1, valor, campo, c_tamanho);
                 }
-                else
-                    raiz->filhos[countFilhos] = novoNodo(c_tamanho-1, 0, campo, c_tamanho);
+                else { //falta quando tem filosofo do lado
+                    int valor = 0;
+                    if (lado == 'e') {
+                        valor = c_tamanho - aux + 1;
+                        valor *= -1;
+                    }
+                    else {
+                        if (aux % 2 == 0)
+                            valor = aux;
+                        else
+                            valor = aux + 1; 
+                    }
+                    raiz->filhos[countFilhos] = novoNodo(c_tamanho-1, valor, campo, c_tamanho);
+                }
                 countFilhos++;
             } while (campo[aux-1] == 'f');
         }
@@ -81,10 +151,10 @@ int main(int argc, char **argv) {
                 countFilhos++;
             } while (campo[aux+1] == 'f');
         }
-
-        ImprimeCampo(raiz->campo, raiz->c_tamanho);
-        scanf("%c", &lixo);
-    }
+        */
+    ImprimeCampo(campo, c_tamanho);
+    scanf("%c", &lixo);
+    
 
 
 
@@ -122,6 +192,24 @@ void InsereFilosofo (char *campo) {
     int n_campo;
     scanf("%d", &n_campo);
     campo[n_campo] = 'f';
+}
+
+void InsereFilosofoAuto (char *campo, int pos) {
+    campo[pos] = 'f';
+}
+
+void MoveBolaAuto (char *campo, int *p_bola, int pos) {
+    if (*p_bola < pos) {
+        for (int i = *p_bola; i < pos; ++i) {
+            campo[i] = '.';
+        }
+    } else {
+        for (int i = *p_bola; i > pos; --i) {
+            campo[i] = '.';
+        }
+    }
+    *p_bola = pos;
+    campo[pos] = 'o';
 }
 
 void MoveBola (char *campo, int *p_bola) {
