@@ -2,14 +2,17 @@
 
 int main(int argc, char **argv) {
     char lado, lixo, lado_acao, acao;
-    int c_tamanho, n_acao, p_bola;
+    int c_tamanho, n_acao, p_bola, p_bola_recebida;
     scanf("%c%d", &lado, &c_tamanho);
 
     //printf("%c %d\n", lado, c_tamanho);
 
     char campo[c_tamanho+2];
+    char campo_recebido[c_tamanho+2];
     campo[0] = 'v';
     campo[c_tamanho+1] = 'v';
+    campo_recebido[0] = 'v';
+    campo_recebido[c_tamanho] = 'v';
     scanf("%c", &lixo);
     for (int i=1; i<=c_tamanho; ++i) {
         scanf("%c", &campo[i]);
@@ -34,61 +37,100 @@ int main(int argc, char **argv) {
                 break;
         }
         ImprimeCampo(campo, c_tamanho);
+        int aux, cont_chutes;
+		int chutes[c_tamanho];
         //Lado Esquerdo
         if (lado == 'e') {
             if (campo[p_bola+1] == '.') {
                 // printf("primeiro if\n");
-                InsereFilosofoAuto(campo, p_bola+1);
+                InsereFilosofoAuto(campo, p_bola+1, lado);
             } else if (campo[p_bola-1] == 'f') {
                 // printf("segundo if\n");
-                int aux = p_bola+1;
+                aux = p_bola+1;
+				cont_chutes = 0;
+				chutes[c_tamanho];
                 do {
                     aux++;
                     while(campo[aux] != '.' && campo[aux] != 'v')
                         aux++;
                     MoveBolaAuto(campo, &p_bola, aux);
+					chutes[cont_chutes] = p_bola;
+					cont_chutes++;
                     if (campo[aux] == 'v') break;
                 } while (campo[aux+1] == 'f');
+				printf("%c o %d", lado, cont_chutes);
+				for (int i=0; i<cont_chutes; ++i) {
+					printf(" %d", chutes[i]);
+				}
+				printf("\n");
             } else {
                 // printf("terceiro if\n");
-                int aux = p_bola+1;
+                aux = p_bola+1;
                 do {
                     aux++;
                     while(campo[aux] != '.' && campo[aux] != 'v')
                         aux++;
-                    if (campo[aux] == 'v')
+                    if (campo[aux] == 'v') {
                         MoveBolaAuto(campo, &p_bola, aux);
-                    else if (campo[aux+1] == '.')
-                        InsereFilosofoAuto(campo, aux+1);
+						printf("%c o 1 %d\n", lado, p_bola);
+                    } else if (campo[aux+1] == '.')
+                        InsereFilosofoAuto(campo, aux+1, lado);
                 } while (campo[aux+1] == 'f');
             }
         } else if (lado == 'd') { //Lado Direito
             if (campo[p_bola-1] == '.') {
-                InsereFilosofoAuto(campo, p_bola-1);
+                InsereFilosofoAuto(campo, p_bola-1, lado);
             } else if (campo[p_bola+1] == 'f') {
-                int aux = p_bola-1;
+                aux = p_bola-1;
+				cont_chutes = 0;
+				chutes[c_tamanho];
                 do {
                     aux--;
                     while(campo[aux] != '.' && campo[aux] != 'v')
                         aux--;
                     MoveBolaAuto(campo, &p_bola, aux);
+					chutes[cont_chutes] = p_bola;
+					cont_chutes++;
                     if (campo[aux] == 'v') break;
                 } while (campo[aux-1] == 'f');
+				printf("%c o %d", lado, cont_chutes);
+				for (int i=0; i<cont_chutes; ++i) {
+					printf(" %d", chutes[i]);
+				}
+				printf("\n");
             } else {
-                int aux = p_bola-1;
+                aux = p_bola-1;
                 do {
                     aux--;
                     while(campo[aux] != '.' && campo[aux] != 'v')
                         aux--;
-                    if (campo[aux] == 'v')
+                    if (campo[aux] == 'v') {
                         MoveBolaAuto(campo, &p_bola, aux);
-                    else if (campo[aux-1] == '.')
-                        InsereFilosofoAuto(campo, aux-1);
+						printf("%c o 1 %d\n", lado, p_bola);
+                    } else if (campo[aux-1] == '.')
+                        InsereFilosofoAuto(campo, aux-1, lado);
                 } while (campo[aux-1] == 'f');
             }
         }
         ImprimeCampo(campo, c_tamanho);
         scanf("%c", &lixo);
+
+    	scanf("%c", &lixo);
+		if (lixo != lado) {
+			printf("Entrada incorreta! (Esperava ‘%c’ ao inves de ‘%c’)\n", lado, lixo);
+			return 0;
+		}
+    	scanf("%c", &lixo);
+    	for (int i=1; i<=c_tamanho; ++i) {
+        	scanf("%c", &campo_recebido[i]);
+        	if (campo_recebido[i] == 'o')
+            	p_bola_recebida = i;
+			if (campo_recebido[i] != campo[i]) {
+				printf("Entrada incorreta! (Verifique o Campo da entrada)\n");
+				return 0;
+			}
+    	}
+    	scanf("%c", &lixo);
     }
         //MINIMAX
         /*
@@ -154,14 +196,12 @@ int main(int argc, char **argv) {
         */
     ImprimeCampo(campo, c_tamanho);
     scanf("%c", &lixo);
-    
-
 
 
     //n->filhos[0] = novoNodo(10, 3);
     //n->children[1] is NULL
     //n->filhos[2] = novoNodo(15, 3);
- 
+
     //free(n->filhos[0]);
     //free(n);
 
@@ -194,8 +234,9 @@ void InsereFilosofo (char *campo) {
     campo[n_campo] = 'f';
 }
 
-void InsereFilosofoAuto (char *campo, int pos) {
+void InsereFilosofoAuto (char *campo, int pos, int lado) {
     campo[pos] = 'f';
+	printf("%c f %d\n", lado, pos);
 }
 
 void MoveBolaAuto (char *campo, int *p_bola, int pos) {
@@ -217,7 +258,6 @@ void MoveBola (char *campo, int *p_bola) {
     scanf("%d", &n_acao);
     for (int j=0; j<n_acao; ++j) {
         scanf("%d", &n_campo);
-        printf("%d\n", n_campo);
         if (n_campo > *p_bola) {
             for (int k=*p_bola; k<n_campo; ++k) {
                 campo[k] = '.';   
