@@ -6,10 +6,14 @@
 
 typedef struct nodo {
     int val;
-    struct *nodo filhos[0];
-} node;
+    char *campo;
+    int c_tamanho;
+    struct nodo* filhos[0];
+} nodo;
+
+typedef struct nodo nodo;
 
 void ImprimeCampo (char *campo, int c_tamanho);
 void InsereFilosofo (char *campo);
 void MoveBola (char *campo, int *p_bola);
-nodo *novoNodo(int n, int val);
+nodo *novoNodo(int n, int val, char *campo, int c_tamanho);

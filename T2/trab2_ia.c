@@ -34,51 +34,81 @@ int main(int argc, char **argv) {
                 break;
         }
         ImprimeCampo(campo, c_tamanho);
+        //Cria a arvore
+        nodo *raiz = novoNodo(c_tamanho-1, 0, campo, c_tamanho);
+        int countFilhos = 0;
+        for (int i = 1; i <= c_tamanho; ++i) {
+            if (campo[i] == '.') {
+                raiz->filhos[countFilhos] = novoNodo(c_tamanho-1, 0, campo, c_tamanho);
+                countFilhos++;
+            }
+        }
+        //ve a esquerda da bola
+        int aux = p_bola-1;
+        if (campo[aux] == 'f') {
+            do {
+                aux -= 1;
+                while (campo[aux] != '.' && campo[aux] != 'v')
+                    aux -= 1;
+                if (campo[aux] == 'v') {
+                    int valor = 100000;
+                    if (lado == 'e')
+                        valor *= -1;
+                    raiz->filhos[countFilhos] = novoNodo(c_tamanho-1, valor, campo, c_tamanho);
+                }
+                else
+                    raiz->filhos[countFilhos] = novoNodo(c_tamanho-1, 0, campo, c_tamanho);
+                countFilhos++;
+            } while (campo[aux-1] == 'f');
+        }
+
+        //ve a direita da bola
+        aux = p_bola+1;
+        if (campo[aux] == 'f') {
+            do {
+                aux += 1;
+                while (campo[aux] != '.' && campo[aux] != 'v')
+                    aux += 1;
+                if (campo[aux] == 'v') {
+                    int valor = 100000;
+                    if (lado == 'd')
+                        valor *= -1;
+                    raiz->filhos[countFilhos] = novoNodo(c_tamanho-1, valor, campo, c_tamanho);
+                    countFilhos++;
+                }
+                else
+                    raiz->filhos[countFilhos] = novoNodo(c_tamanho-1, 0, campo, c_tamanho);
+                countFilhos++;
+            } while (campo[aux+1] == 'f');
+        }
+
+        ImprimeCampo(raiz->campo, raiz->c_tamanho);
         scanf("%c", &lixo);
     }
 
 
 
-
-
-
-    nodo *n = novoNodo(c_tamanho-1, 3);
-    n->filhos[0] = novoNodo(10, 3);
+    //n->filhos[0] = novoNodo(10, 3);
     //n->children[1] is NULL
-    n->filhos[2] = novoNodo(15, 3);
+    //n->filhos[2] = novoNodo(15, 3);
  
-    free(n->filhos[0]);
-    free(n);
+    //free(n->filhos[0]);
+    //free(n);
 
     return 0;
 }
 
 
-nodo *novoNodo(int n, int val) {
+nodo *novoNodo(int n, int val, char *campo, int c_tamanho) {
     nodo *x = calloc(sizeof(nodo) + n*sizeof(nodo*), 1);
+    x->campo = calloc(sizeof(char) * (c_tamanho+2), 1);
     x->val = val;
+    for (int i = 0; i < c_tamanho+2; ++i) {
+        x->campo[i] = campo[i];
+    }
+    x->c_tamanho = c_tamanho;
     return x;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 void ImprimeCampo (char *campo, int c_tamanho) {
