@@ -4,6 +4,7 @@ int main(int argc, char **argv) {
     char lado, lixo, lado_acao, acao;
     int c_tamanho, n_acao, p_bola, p_bola_recebida;
     scanf("%c%d", &lado, &c_tamanho);
+    int n_campo[c_tamanho+1];
 
     //printf("%c %d\n", lado, c_tamanho);
 
@@ -24,21 +25,27 @@ int main(int argc, char **argv) {
     while (campo[0] == 'v' && campo[c_tamanho+1] == 'v') {
         scanf("%c%c", &lado_acao, &lixo);
         scanf("%c", &acao);
-
+        scanf("%d", &n_acao);
+        if (acao == 'o') {
+            for (int j=0; j<n_acao; ++j) {
+                scanf("%d", &n_campo[j]);
+            }
+        }
         switch (acao) {
             case 'f':
-                InsereFilosofo(campo);
+                InsereFilosofo(campo, n_acao);
                 break;
 
             case 'o':
-                MoveBola(campo, &p_bola);
+                MoveBola(campo, &p_bola, n_acao, n_campo);
                 break;
             case 'n':
                 break;
         }
         ImprimeCampo(campo, c_tamanho);
         int aux, cont_chutes;
-		int chutes[c_tamanho];
+        int chutes[c_tamanho];
+        /* Deterministica
         //Lado Esquerdo
         if (lado == 'e') {
             if (campo[p_bola+1] == '.') {
@@ -111,7 +118,12 @@ int main(int argc, char **argv) {
                         InsereFilosofoAuto(campo, aux-1, lado);
                 } while (campo[aux-1] == 'f');
             }
-        }
+        }*/
+        //Cria a arvore
+        nodo *raiz = novoNodo(0, campo, c_tamanho, acao, n_acao, n_campo);
+        int countIteracoes = 2;
+        miniMax(raiz, countIteracoes, p_bola, lado);
+        
         ImprimeCampo(campo, c_tamanho);
         scanf("%c", &lixo);
 
@@ -209,14 +221,22 @@ int main(int argc, char **argv) {
 }
 
 
-nodo *novoNodo(int n, int val, char *campo, int c_tamanho) {
-    nodo *x = calloc(sizeof(nodo) + n*sizeof(nodo*), 1);
+nodo *novoNodo(int val, char *campo, int c_tamanho, char acao, int n_acao, int *n_campo) {
+    nodo *x = calloc(sizeof(nodo) + (c_tamanho-1)*sizeof(nodo*), 1);
     x->campo = calloc(sizeof(char) * (c_tamanho+2), 1);
     x->val = val;
     for (int i = 0; i < c_tamanho+2; ++i) {
         x->campo[i] = campo[i];
     }
     x->c_tamanho = c_tamanho;
+    x->jogada = acao;
+    x->posicao_jogada = n_acao;
+    if (acao == 'o') {
+        x->posicoes_pulos = calloc(sizeof(int) * (n_acao), 1);
+        for (int i = 0; i < n_acao; ++i) {
+            x->posicoes_pulos[i] = n_campo[i];
+        }
+    }
     return x;
 }
 
@@ -228,9 +248,7 @@ void ImprimeCampo (char *campo, int c_tamanho) {
     printf("\n");
 }
 
-void InsereFilosofo (char *campo) {
-    int n_campo;
-    scanf("%d", &n_campo);
+void InsereFilosofo (char *campo, int n_campo) {
     campo[n_campo] = 'f';
 }
 
@@ -253,21 +271,162 @@ void MoveBolaAuto (char *campo, int *p_bola, int pos) {
     campo[pos] = 'o';
 }
 
-void MoveBola (char *campo, int *p_bola) {
-    int n_acao, n_campo;
-    scanf("%d", &n_acao);
+void MoveBola (char *campo, int *p_bola, int n_acao, int *n_campo) {
     for (int j=0; j<n_acao; ++j) {
-        scanf("%d", &n_campo);
-        if (n_campo > *p_bola) {
-            for (int k=*p_bola; k<n_campo; ++k) {
+        if (n_campo[j] > *p_bola) {
+            for (int k=*p_bola; k<n_campo[j]; ++k) {
                 campo[k] = '.';   
             }
         } else {
-            for (int k=*p_bola; k>n_campo; --k) {
+            for (int k=*p_bola; k>n_campo[j]; --k) {
                 campo[k] = '.';   
             }
         }
-        campo[n_campo] = 'o';
-        *p_bola = n_campo;
+        campo[n_campo[j]] = 'o';
+        *p_bola = n_campo[j];
     }
+}
+
+int miniMax(nodo *pai, int countIteracoes, int p_bola, char lado) {
+    if (countIteracoes == 0) {
+        int valor = 0;
+        int indiceOposto = 0;
+        if (lado == 'e') {
+            if (p_bola == 0)
+                valor = pai->c_tamanho * pai->c_tamanho * -1;
+            else if (p_bola == pai->c_tamanho + 1)
+                valor = pai->c_tamanho * pai->c_tamanho;
+            else {
+                /* DA PRA JUNTAR EM UM FOR SO*/
+                for (int i = 1; i < p_bola-1; ++i) {
+                    if (pai->campo[i] == 'f') {
+                        indiceOposto = (2 * p_bola) - i; //p_bola - i + p_bola;
+                        if (indiceOposto > pai->c_tamanho)
+                            valor += i * -1;
+                        else
+                            valor += i * indiceOposto * -1;
+                    }
+                }
+                if (pai->campo[p_bola-1] == 'f') {
+                    indiceOposto = (2 * p_bola) - p_bola - 1; //p_bola - i + p_bola;
+                    if (indiceOposto > pai->c_tamanho)
+                        valor += p_bola - 1 * -1 * pai->c_tamanho;
+                    else
+                        valor += p_bola - 1 * indiceOposto * -1 * pai->c_tamanho;
+                }
+                for (int i = p_bola + 1; i <= pai->c_tamanho; ++i) {
+                    if (pai->campo[i] == 'f') {
+                        indiceOposto = (2 * p_bola) - i; // p_bola - (i - p_bola)
+                        if (indiceOposto < 1)
+                            valor += i;
+                        else
+                            valor += i * indiceOposto;
+                    }
+                }
+            }
+        } else {
+            if (p_bola == 0)
+                valor = pai->c_tamanho * pai->c_tamanho;
+            else if (p_bola == pai->c_tamanho + 1)
+                valor = pai->c_tamanho * pai->c_tamanho * -1;
+            else {
+                /* DA PRA JUNTAR EM UM FOR SO*/
+                for (int i = 1; i < p_bola; ++i) {
+                    if (pai->campo[i] == 'f') {
+                        indiceOposto = (2 * p_bola) - i; //p_bola - i + p_bola;
+                        if (indiceOposto > pai->c_tamanho)
+                            valor += i;
+                        else
+                            valor += i * indiceOposto;
+                    }
+                }
+                if (pai->campo[p_bola+1] == 'f') {
+                    indiceOposto = (2 * p_bola) - p_bola + 1; // p_bola - (i - p_bola)
+                    if (indiceOposto < 1)
+                        valor += p_bola - 1 * -1 * pai->c_tamanho;
+                    else
+                        valor += p_bola - 1 * indiceOposto * -1 * pai->c_tamanho;
+                }
+                for (int i = p_bola + 2; i <= pai->c_tamanho; ++i) {
+                    if (pai->campo[i] == 'f') {
+                        indiceOposto = (2 * p_bola) - i; // p_bola - (i - p_bola)
+                        if (indiceOposto < 1)
+                            valor += i * -1;
+                        else
+                            valor += i * indiceOposto * -1;
+                    }
+                }
+            }
+        }
+        return valor;
+    } 
+    countIteracoes--;
+    int countFilhos = 0;
+    int valor;
+    nodo *filho;
+    for (int i = 1; i <= pai->c_tamanho; ++i) {
+        if (pai->campo[i] == '.') {
+            filho = novoNodo(0, pai->campo, pai->c_tamanho, pai->jogada, pai->posicao_jogada, pai->posicoes_pulos);
+            filho->campo[i] = 'f';
+            pai->filhos[countFilhos] = filho;
+            valor = miniMax(filho, countIteracoes, p_bola, lado);
+            countFilhos++;
+            if (countIteracoes % 2 == 0) { //MINI
+                if (pai->val > valor)
+                    pai->val = valor;
+            } else { //MAX
+                if (pai->val < valor)
+                    pai->val = valor;
+            }
+        }
+    }
+
+    //ve a esquerda da bola
+    int aux = p_bola-1;
+    if (aux > 0) {
+        if (pai->campo[aux] == 'f') {
+            do {
+                aux -= 1;
+                while (pai->campo[aux] != '.' && pai->campo[aux] != 'v')
+                    aux -= 1;
+                filho = novoNodo(0, pai->campo, pai->c_tamanho, pai->jogada, pai->posicao_jogada, pai->posicoes_pulos);
+                MoveBolaAuto(filho->campo, &p_bola, aux); //CUIDAR PRA VER SE A POSICAO DA BOLA FICA CERTO PRA CADA NODO DA ARVORE
+                pai->filhos[countFilhos] = filho;
+                valor = miniMax(filho, countIteracoes, p_bola, lado);
+                if (countIteracoes % 2 == 0) { //MINI
+                    if (pai->val > valor)
+                        pai->val = valor;
+                } else { //MAX
+                    if (pai->val < valor)
+                        pai->val = valor;
+                }
+                countFilhos++;
+            } while (pai->campo[aux-1] == 'f');
+        }
+    }
+    //ve a direita da bola
+    aux = p_bola+1;
+    if (aux <= pai->c_tamanho) {
+        if (pai->campo[aux] == 'f') {
+            do {
+                aux += 1;
+                while (pai->campo[aux] != '.' && pai->campo[aux] != 'v')
+                    aux += 1;
+                filho = novoNodo(0, pai->campo, pai->c_tamanho, pai->jogada, pai->posicao_jogada, pai->posicoes_pulos);
+                MoveBolaAuto(filho->campo, &p_bola, aux); //CUIDAR PRA VER SE A POSICAO DA BOLA FICA CERTO PRA CADA NODO DA ARVORE
+                pai->filhos[countFilhos] = filho;
+                valor = miniMax(filho, countIteracoes, p_bola, lado);
+                if (countIteracoes % 2 == 0) { //MINI
+                    if (pai->val > valor)
+                        pai->val = valor;
+                } else { //MAX
+                    if (pai->val < valor)
+                        pai->val = valor;
+                }
+                countFilhos++;
+            } while (pai->campo[aux+1] == 'f');
+        }
+    }
+
+    return pai->val;
 }
