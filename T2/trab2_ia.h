@@ -6,11 +6,12 @@
 
 typedef struct nodo {
     int val;
-    char *campo;
     int c_tamanho;
-    char jogada;
     int posicao_jogada;
+    int count_filhos;
     int *posicoes_pulos;
+    char jogada;
+    char *campo;
     struct nodo* filhos[0];
 } nodo;
 

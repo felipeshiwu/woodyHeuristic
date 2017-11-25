@@ -25,105 +25,52 @@ int main(int argc, char **argv) {
     while (campo[0] == 'v' && campo[c_tamanho+1] == 'v') {
         scanf("%c%c", &lado_acao, &lixo);
         scanf("%c", &acao);
-        scanf("%d", &n_acao);
-        if (acao == 'o') {
+		if (acao == 'f') {
+        	scanf("%d", &n_acao);
+         	InsereFilosofo(campo, n_acao);
+        } else if (acao == 'o') {
+        	scanf("%d", &n_acao);
             for (int j=0; j<n_acao; ++j) {
                 scanf("%d", &n_campo[j]);
             }
-        }
-        switch (acao) {
-            case 'f':
-                InsereFilosofo(campo, n_acao);
-                break;
-
-            case 'o':
-                MoveBola(campo, &p_bola, n_acao, n_campo);
-                break;
-            case 'n':
-                break;
+        	MoveBola(campo, &p_bola, n_acao, n_campo);
         }
         ImprimeCampo(campo, c_tamanho);
         int aux, cont_chutes;
         int chutes[c_tamanho];
-        /* Deterministica
-        //Lado Esquerdo
-        if (lado == 'e') {
-            if (campo[p_bola+1] == '.') {
-                // printf("primeiro if\n");
-                InsereFilosofoAuto(campo, p_bola+1, lado);
-            } else if (campo[p_bola-1] == 'f') {
-                // printf("segundo if\n");
-                aux = p_bola+1;
-				cont_chutes = 0;
-				chutes[c_tamanho];
-                do {
-                    aux++;
-                    while(campo[aux] != '.' && campo[aux] != 'v')
-                        aux++;
-                    MoveBolaAuto(campo, &p_bola, aux);
-					chutes[cont_chutes] = p_bola;
-					cont_chutes++;
-                    if (campo[aux] == 'v') break;
-                } while (campo[aux+1] == 'f');
-				printf("%c o %d", lado, cont_chutes);
-				for (int i=0; i<cont_chutes; ++i) {
-					printf(" %d", chutes[i]);
-				}
-				printf("\n");
-            } else {
-                // printf("terceiro if\n");
-                aux = p_bola+1;
-                do {
-                    aux++;
-                    while(campo[aux] != '.' && campo[aux] != 'v')
-                        aux++;
-                    if (campo[aux] == 'v') {
-                        MoveBolaAuto(campo, &p_bola, aux);
-						printf("%c o 1 %d\n", lado, p_bola);
-                    } else if (campo[aux+1] == '.')
-                        InsereFilosofoAuto(campo, aux+1, lado);
-                } while (campo[aux+1] == 'f');
-            }
-        } else if (lado == 'd') { //Lado Direito
-            if (campo[p_bola-1] == '.') {
-                InsereFilosofoAuto(campo, p_bola-1, lado);
-            } else if (campo[p_bola+1] == 'f') {
-                aux = p_bola-1;
-				cont_chutes = 0;
-				chutes[c_tamanho];
-                do {
-                    aux--;
-                    while(campo[aux] != '.' && campo[aux] != 'v')
-                        aux--;
-                    MoveBolaAuto(campo, &p_bola, aux);
-					chutes[cont_chutes] = p_bola;
-					cont_chutes++;
-                    if (campo[aux] == 'v') break;
-                } while (campo[aux-1] == 'f');
-				printf("%c o %d", lado, cont_chutes);
-				for (int i=0; i<cont_chutes; ++i) {
-					printf(" %d", chutes[i]);
-				}
-				printf("\n");
-            } else {
-                aux = p_bola-1;
-                do {
-                    aux--;
-                    while(campo[aux] != '.' && campo[aux] != 'v')
-                        aux--;
-                    if (campo[aux] == 'v') {
-                        MoveBolaAuto(campo, &p_bola, aux);
-						printf("%c o 1 %d\n", lado, p_bola);
-                    } else if (campo[aux-1] == '.')
-                        InsereFilosofoAuto(campo, aux-1, lado);
-                } while (campo[aux-1] == 'f');
-            }
-        }*/
         //Cria a arvore
         nodo *raiz = novoNodo(0, campo, c_tamanho, acao, n_acao, n_campo);
         int countIteracoes = 2;
+		nodo *max;
+		max = raiz->filhos[0];
+		printf("pre minimax\n");
         miniMax(raiz, countIteracoes, p_bola, lado);
-        
+		printf("pos minimax\n");
+
+		// Encontra o filho que possui o maior valor
+		for (int i=0; i < raiz->count_filhos; ++i){
+			printf("morri\n");
+			if (raiz->filhos[i]->val == raiz->val) {
+				max = raiz->filhos[i];
+			}
+		}
+		// Se a acao for 'f', chama a funcao de inserir filosofo e printa
+		if (max->jogada == 'f') {
+       		InsereFilosofoAuto(campo, max->posicao_jogada, lado);
+			printf("%c f %d\n", lado, max->posicao_jogada);
+		// Se a acao for 'o', chama a funcao de mover bola e printa
+		} else if (max->jogada == 'o') {
+			printf("%c o", lado);
+            for (int i=0; i < max->posicao_jogada; ++i) {
+                MoveBolaAuto(campo, &p_bola, max->posicoes_pulos[i]);
+				printf(" %d", max->posicoes_pulos[i]);
+
+			}
+			printf("\n");
+		// Se a acao for 'n', apenas printa
+		} else if (max->jogada == 'n') {
+			printf("%c n\n", lado);
+		}
         ImprimeCampo(campo, c_tamanho);
         scanf("%c", &lixo);
 
@@ -144,78 +91,12 @@ int main(int argc, char **argv) {
     	}
     	scanf("%c", &lixo);
     }
-        //MINIMAX
-        /*
-        //Cria a arvore
-        nodo *raiz = novoNodo(c_tamanho-1, 0, campo, c_tamanho);
-        int countFilhos = 0;
-        for (int i = 1; i <= c_tamanho; ++i) {
-            if (campo[i] == '.') {
-                raiz->filhos[countFilhos] = novoNodo(c_tamanho-1, 0, campo, c_tamanho);
-                countFilhos++;
-            }
-        }
-        //ve a esquerda da bola
-        int aux = p_bola-1;
-        if (campo[aux] == 'f') {
-            do {
-                aux -= 1;
-                while (campo[aux] != '.' && campo[aux] != 'v')
-                    aux -= 1;
-                if (campo[aux] == 'v') {
-                    int valor = 100000;
-                    if (lado == 'e')
-                        valor *= -1;
-                    raiz->filhos[countFilhos] = novoNodo(c_tamanho-1, valor, campo, c_tamanho);
-                }
-                else { //falta quando tem filosofo do lado
-                    int valor = 0;
-                    if (lado == 'e') {
-                        valor = c_tamanho - aux + 1;
-                        valor *= -1;
-                    }
-                    else {
-                        if (aux % 2 == 0)
-                            valor = aux;
-                        else
-                            valor = aux + 1; 
-                    }
-                    raiz->filhos[countFilhos] = novoNodo(c_tamanho-1, valor, campo, c_tamanho);
-                }
-                countFilhos++;
-            } while (campo[aux-1] == 'f');
-        }
-
-        //ve a direita da bola
-        aux = p_bola+1;
-        if (campo[aux] == 'f') {
-            do {
-                aux += 1;
-                while (campo[aux] != '.' && campo[aux] != 'v')
-                    aux += 1;
-                if (campo[aux] == 'v') {
-                    int valor = 100000;
-                    if (lado == 'd')
-                        valor *= -1;
-                    raiz->filhos[countFilhos] = novoNodo(c_tamanho-1, valor, campo, c_tamanho);
-                    countFilhos++;
-                }
-                else
-                    raiz->filhos[countFilhos] = novoNodo(c_tamanho-1, 0, campo, c_tamanho);
-                countFilhos++;
-            } while (campo[aux+1] == 'f');
-        }
-        */
     ImprimeCampo(campo, c_tamanho);
     scanf("%c", &lixo);
 
 
-    //n->filhos[0] = novoNodo(10, 3);
-    //n->children[1] is NULL
-    //n->filhos[2] = novoNodo(15, 3);
 
-    //free(n->filhos[0]);
-    //free(n);
+    //free(raiz);
 
     return 0;
 }
@@ -224,6 +105,7 @@ int main(int argc, char **argv) {
 nodo *novoNodo(int val, char *campo, int c_tamanho, char acao, int n_acao, int *n_campo) {
     nodo *x = calloc(sizeof(nodo) + (c_tamanho-1)*sizeof(nodo*), 1);
     x->campo = calloc(sizeof(char) * (c_tamanho+2), 1);
+	x->count_filhos = 0;
     x->val = val;
     for (int i = 0; i < c_tamanho+2; ++i) {
         x->campo[i] = campo[i];
@@ -288,6 +170,7 @@ void MoveBola (char *campo, int *p_bola, int n_acao, int *n_campo) {
 }
 
 int miniMax(nodo *pai, int countIteracoes, int p_bola, char lado) {
+	printf ("dea\n");
     if (countIteracoes == 0) {
         int valor = 0;
         int indiceOposto = 0;
@@ -359,7 +242,7 @@ int miniMax(nodo *pai, int countIteracoes, int p_bola, char lado) {
             }
         }
         return valor;
-    } 
+    }
     countIteracoes--;
     int countFilhos = 0;
     int valor;
@@ -427,6 +310,7 @@ int miniMax(nodo *pai, int countIteracoes, int p_bola, char lado) {
             } while (pai->campo[aux+1] == 'f');
         }
     }
+	pai->count_filhos = countFilhos;
 
     return pai->val;
 }
