@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
         }
         //Cria a arvore
         nodo *raiz = novoNodo(0, campo, c_tamanho, acao, n_acao, n_campo, p_bola);
-        int countIteracoes = 2;
+        int countIteracoes = 3;
 		nodo *max;
 		max = raiz->filhos[0];
         int valor = miniMax(raiz, countIteracoes, lado);
@@ -323,7 +323,7 @@ int miniMax(nodo *pai, int countIteracoes, char lado) {
 	pai->count_filhos = countFilhos;
     pai->val = pai->filhos[0]->val;
 	for (int i = 0; i < countFilhos; ++i) {
-    	if (countIteracoes % 2 == 0) { //MINI
+    	if (countIteracoes % 2 != 0) { //MINI
         	if (pai->val > pai->filhos[i]->val)
             	pai->val = pai->filhos[i]->val;
     	} else { //MAX
