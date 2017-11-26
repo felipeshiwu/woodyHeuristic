@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
 			printf("%c n\n", lado);
 		}
         //ImprimeCampo(campo, c_tamanho);
-    	scanf("%c", &lixo);        
+    	scanf("%c", &lixo);
         scanf("%c%d", &lado, &c_tamanho);
         scanf("%c", &lixo);
         p_bola = -1;
@@ -158,10 +158,18 @@ int miniMax(nodo *pai, int countIteracoes, char lado) {
         int indiceOposto = 0;
         if (lado == 'e') {
             if (pai->p_bola == 0)
-                valor = pai->c_tamanho * pai->c_tamanho;
-            else if (pai->p_bola == pai->c_tamanho + 1)
                 valor = pai->c_tamanho * pai->c_tamanho * -1;
+            else if (pai->p_bola == pai->c_tamanho + 1)
+                valor = pai->c_tamanho * pai->c_tamanho;
             else {
+				int meio_do_campo = (pai->c_tamanho/2) + 1;
+				if (meio_do_campo > pai->p_bola) {
+                   	indiceOposto = (2 * meio_do_campo) - pai->p_bola;
+					valor += indiceOposto * pai->p_bola * -1;
+				} else if (meio_do_campo < pai->p_bola) {
+					indiceOposto = (2 * meio_do_campo) - pai->p_bola;
+					valor += indiceOposto * pai->p_bola;
+				}
                 /* DA PRA JUNTAR EM UM FOR SO*/
                 for (int i = 1; i < pai->p_bola-1; ++i) {
                     if (pai->campo[i] == 'f') {
@@ -191,9 +199,9 @@ int miniMax(nodo *pai, int countIteracoes, char lado) {
             }
         } else {
             if (pai->p_bola == 0)
-                valor = pai->c_tamanho * pai->c_tamanho * -1;
-            else if (pai->p_bola == pai->c_tamanho + 1)
                 valor = pai->c_tamanho * pai->c_tamanho;
+            else if (pai->p_bola == pai->c_tamanho + 1)
+                valor = pai->c_tamanho * pai->c_tamanho * -1;
             else {
                 /* DA PRA JUNTAR EM UM FOR SO*/
                 for (int i = 1; i < pai->p_bola; ++i) {
@@ -236,16 +244,9 @@ int miniMax(nodo *pai, int countIteracoes, char lado) {
             pai->filhos[countFilhos] = filho;
             valor = miniMax(filho, countIteracoes, lado);
             countFilhos++;
-            if (countIteracoes % 2 == 0) { //MINI
-                if (pai->val < valor) 
-                    pai->val = valor;
-            } else { //MAX
-                if (pai->val > valor)
-                    pai->val = valor;
-            }
+			filho->val = valor;
         }
     }
-
     //ve a esquerda da bola
     int aux = pai->p_bola-1;
     if (aux > 0) {
@@ -262,13 +263,7 @@ int miniMax(nodo *pai, int countIteracoes, char lado) {
                 MoveBolaAuto(filho->campo, &filho->p_bola, aux); //CUIDAR PRA VER SE A POSICAO DA BOLA FICA CERTO PRA CADA NODO DA ARVORE
                 pai->filhos[countFilhos] = filho;
                 valor = miniMax(filho, countIteracoes, lado);
-                if (countIteracoes % 2 == 0) { //MINI
-                    if (pai->val < valor)
-                        pai->val = valor;
-                } else { //MAX
-                    if (pai->val > valor)
-                        pai->val = valor;
-                }
+				filho->val = valor;
                 countFilhos++;
             } while (pai->campo[aux-1] == 'f');
         }
@@ -289,17 +284,30 @@ int miniMax(nodo *pai, int countIteracoes, char lado) {
                 MoveBolaAuto(filho->campo, &filho->p_bola, aux); //CUIDAR PRA VER SE A POSICAO DA BOLA FICA CERTO PRA CADA NODO DA ARVORE
                 pai->filhos[countFilhos] = filho;
                 valor = miniMax(filho, countIteracoes, lado);
-                if (countIteracoes % 2 == 0) { //MINI
-                    if (pai->val < valor)
-                        pai->val = valor;
-                } else { //MAX
-                    if (pai->val > valor)
-                        pai->val = valor;
-                }
+				filho->val = valor;
                 countFilhos++;
             } while (pai->campo[aux+1] == 'f');
         }
     }
 	pai->count_filhos = countFilhos;
-    return pai->val;
+    pai->val = pai->filhos[0]->val;
+	for (int i = 0; i < countFilhos; ++i) {
+		for (int j=1; j<=pai->c_tamanho; ++j){
+			printf("%c ", pai->filhos[i]->campo[j]);
+		}
+    	printf("\n");
+    	if (countIteracoes % 2 != 0) { //MINI
+        	if (pai->val > pai->filhos[i]->val)
+            	pai->val = pai->filhos[i]->val;
+    	} else { //MAX
+        	if (pai->val < pai->filhos[i]->val)
+            	pai->val = pai->filhos[i]->val;
+    	}
+	}
+    printf("%d: ", pai->val);
+	for (int i=0; i<pai->count_filhos; ++i){
+    	printf("%d ", pai->filhos[i]->val);
+	}
+    printf("\n");
+	return pai->val;
 }
