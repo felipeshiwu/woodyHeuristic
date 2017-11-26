@@ -1,25 +1,27 @@
 #===========================================================================================================#
-#	Trabalho de IA = 2017/2
-#	Prof: Fabiano
-#	Alunos: Felipe Shi Iu Wu - GRR20157578
-#			Lucas Olini - GRR20157108
+#   Trabalho de IA = 2017/2
+#   Prof: Fabiano
+#   Alunos: Felipe Shi Iu Wu - GRR20157578
+#           Lucas Olini - GRR20157108
 #===========================================================================================================#
 
-	O trabalho consistia em implementar um programa em C que jogue o futebol dos filosofos unidimensional
-recebendo as jogadas do oponente pela entrada padrao.
-	Em primeiro momento, o que fizemos foi implementar o jogo e analisar as estrategias de jogo que tinham
-maiores chances de vitoria, e partimos para uma implementacao deterministica da estrategia. Junto a isso
-implementamos uma estrutura de arvore, utilizando structs, cada nodo guardava o status do campo, a jogada
-e o valor.
-	Implementamos o Minimax determinando uma quantidade de recursoes, na ultima eh calculada o valor referente
-aquele status do campo. Definimos valores diferentes para cada posicao do filosofo, os filosofos entre a bola
-e o seu proprio gol possuem valores negativos que representam o indice da posicao multiplicado pelo seu indice
-oposto no campo, e os filosofos entre a bola e o gol do oponente possuem o mesmo calculo porem positivo.
-Existem dois casos especias, a primeira eh a posicao do filosofo imediatamente do lado da bola no sentido do
-proprio gol, em que recebe um valor negativo muito maior que as demais, o segundo caso eh a posicao do filosofo
-imediatamente do lado da bola no sentido do gol do oponente, que recebe um valor positivo muito maior que os
-demais.
-	Ao valorar as folhas da arvores, o pai recebe o maior valor dos filhos, em seguida o neto recebe o menor
-valor dos filhos ate chegar na raiz, o qual recebe o maior valor dos seus filhos. Chegando na raiz, verificamos
-qual jogada se refere o valor recebido pela raiz e imprimimos ela na saida, apos isso, aguardamos a proxima
+    O trabalho consistia em implementar um programa em C que jogue o futebol dos filosofos unidimensional
+recebendo o estado do campo atual e a ultima jogada do oponente pela entrada padrao.
+    Em primeiro momento, o que fizemos foi implementar o jogo e analisar as estrategias de jogo que tinham
+maiores chances de vitoria, e partimos para uma implementacao deterministica da estrategia para fins de
+teste. Junto a isso implementamos uma estrutura de arvore, que foi utilizada tambem para a resolucao final, 
+utilizando structs, cada nodo guardava o status do campo, a jogada, o valor e um vetor de apontadores para os
+filhos.
+    Apos os testes para determinar a estrategia, implementamos o Minimax determinando uma quantidade de 
+recursoes, na ultima eh calculada o valor referente aquele status do campo. Definimos valores diferentes para
+cada posicao que possui um filosofo. As posicoes com filosofos entre a bola e o seu proprio gol possuem
+valores negativos que valem o indice da posicao multiplicado pelo seu indice oposto no campo, e as posicoes
+com filosofos entre a bola e o gol do oponente possuem o mesmo calculo porem positivo. Existem dois casos
+especiais, o primeiro eh a posicao do filosofo imediatamente do lado da bola no sentido do proprio gol, a
+qual recebe um valor negativo muito maior que as demais negativas,e o segundo caso eh a posicao do filosofo
+imediatamente do lado da bola no sentido do gol do oponente, que recebe um valor positivo muito maior que as
+demais positivas.
+    Ao valorar as folhas da arvore, o pai recebe o maior valor dos filhos. Em seguida, o vo recebe o menor
+valor dos filhos, e entao a raiz recebera o maior valor entre os vos. Chegando na raiz, verificamos
+qual jogada se refere ao valor recebido e imprimimos ela na saida padrao. Apos isso, aguardamos a proxima
 jogada do oponente.
