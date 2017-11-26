@@ -19,38 +19,7 @@ Existem dois casos especias, a primeira eh a posicao do filosofo imediatamente d
 proprio gol, em que recebe um valor negativo muito maior que as demais, o segundo caso eh a posicao do filosofo
 imediatamente do lado da bola no sentido do gol do oponente, que recebe um valor positivo muito maior que os
 demais.
-	Ao valorar as folhas da arvores, o pai recebe 
-
-	Em primeiro momento, o que fizemos foi entender como funcionava o algoritmo do H1 e H2,
-disponibilizado pelo professor, ficamos tentados a implementar a nossa heuristica baseada na fronteira da
-fronteira, ou ate mesmo da fronteira da fronteira da fronteira, o que foi discutindo em sala que nao seria
-plausivel. Partimos entao para a implementacao de uma nova heuristica que consistia em alcancar todos as
-bordas do mapa, partindo da mais proxima. Com isso, implementamos a maior parte da estrutura de dados 
-utilizada no trabalho, implementamos uma matriz de adjacencia, cujo, cada vertice representava uma casa no 
-tabuleiro do jogo. Implementamos tambem um algoritmo de Dijkstra que rodava na matriz de adjacencia. 
-Tivemos problemas na hora de montar a arvore que contia os possiveis caminhos, tentamos implementar a arvore
-com nodos, o que nao deu muito certo, por conta da manipulacao, sendo assim, implementamos uma lista 
-encadeada que guarda as folhas da arvore.
-	Porem, esta implementacao nao estava correta, pois, alem de nao prover uma solucao em ate 5 minutos,
-nao era uma heuristica admissivel, visto que a mesma nao calculava a distancia ate o nodo final(tabuleiro
-completo), mas apenas ate a borda mais proxima. Sendo assim, apos termos estes problemas tecnicos e 
-conceituais, decidimos mudar a heuristica utilizada no algoritmo.
-	Sendo assim, nosso algoritmo atual utiliza a matriz de adjacencia para montar o grafo, utiliza a lista 
-encadeada para guardar as folhas e a heuristica consiste em procurar o menor caminho ate o ponto mais 
-distante, calculando toda vez que o mapa eh pintado de uma nova cor. O loop termina quando o tabuleiro 
-todo esta pintado com uma cor apenas. Essa heuristica evolui daquela que pensamos inicialmente, a que
-alcancava as 4 bordas com o menor caminho retornado por Dijkstra, no entanto, tivemos varios casos em que
-mesmo alcancando as 4 bordas, ainda restavam casas no tabuleiro sem pintar. Nos levou a pensar uma
-forma de calcular um ponto dinamicamente ate que garanta a coloracao unica do tabuleiro. Pensamos em
-varias formas, incluindo sortear casas, ainda nao pintadas, aleatoriamente.
-	Apos testes, percebemos que uma forma eficiente seria encontrar o ponto mais distante e achar o
-caminho mais curto ate ele, com isso, nasce a nossa heuristica atual.
-	A nossa implementacao expande novas folhas e soma os passos que faltam com o caminho percorrido,
-f(x) = g(x) + h(x), no entanto, percebemos que o algoritmo faz uma busca gulosa, pois a cada loop, apenas
-um caminho eh inserido na lista de folhas ao passo que o pai deste eh removido da lista, tendo sendo
-apenas um caminho disponivel na lista. Com isso, mesmo que o calculo do f(x) seja feito e exista a logica
-de escolha do caminho baseado no menor custo, o algoritmo nunca volta na arvore, caracterizando a busca
-gulosa.
-	A conclusao eh um algoritmo que vence facilmente do H1 e H2, alem de manter uma media inferior ao H4
-e H5.
-
+	Ao valorar as folhas da arvores, o pai recebe o maior valor dos filhos, em seguida o neto recebe o menor
+valor dos filhos ate chegar na raiz, o qual recebe o maior valor dos seus filhos. Chegando na raiz, verificamos
+qual jogada se refere o valor recebido pela raiz e imprimimos ela na saida, apos isso, aguardamos a proxima
+jogada do oponente.
